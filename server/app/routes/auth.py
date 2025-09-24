@@ -2,7 +2,7 @@ from fastapi import APIRouter, Body, Path, Query, Depends, HTTPException, status
 from typing import Annotated, cast
 from app.schemas.schemas import UserIn
 from pydantic import BaseModel
-from app.db.pg import SessionLocal
+from app.db.pg import get_db,Session
 from app.utils import auth as auth_utils
 from app.models.models import User
 from sqlalchemy.exc import IntegrityError
@@ -17,7 +17,7 @@ load_dotenv()
 router=APIRouter(
     prefix='/auth',
     tags=['auth'],
-    dependencies=[],
+    dependencies=[Depends(get_db)],
     responses={404: {"description":"not-found"}}
 )
 
@@ -27,8 +27,7 @@ class UserSignIn(BaseModel):
     password: str
 
 @router.post('/signup', status_code=status.HTTP_201_CREATED)
-def signup(user:Annotated[UserIn,Body()]):
-    db=SessionLocal()
+def signup(user:Annotated[UserIn,Body()], db:Session=Depends(get_db)):
     try:
         hashed=auth_utils.get_password_hash(user.password)
         db_user=User(
@@ -50,8 +49,7 @@ def signup(user:Annotated[UserIn,Body()]):
     return {"access_token": token, "token_type":"bearer", "message":"user created successfully.", "success":True}
 
 @router.post('/signin')
-def signin(payload:Annotated[UserSignIn,Body()]):
-    db=SessionLocal()
+def signin(payload:Annotated[UserSignIn,Body()], db:Session=Depends(get_db)):
     try:
         q=None
         if payload.username:
@@ -77,6 +75,7 @@ def logout():
 oauth=OAuth()
 GOOGLE_CLIENT_ID=os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET=os.getenv('GOOGLE_CLIENT_SECRET')
+
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     oauth.register(
         name='google',
@@ -97,48 +96,66 @@ async def google_login(request: Request):
     return await client.authorize_redirect(request, redirect_uri)
 
 @router.get('/google/callback')
-async def google_callback(request:Request):
+async def google_callback(request: Request, db: Session = Depends(get_db)):
     client = oauth.create_client('google')
     if client is None:
         raise HTTPException(status_code=500, detail="Google OAuth client not configured")
+    
+    nonce = request.session.get('nonce')
+
     token = await client.authorize_access_token(request)
     if not token:
-        raise HTTPException(status_code=400, detail="failed to obtain token from provider")
-    print(f"token: {token}")
-    # Ensure token is a dict and check for id_token safely
-    id_token = token.get("id_token") if isinstance(token, dict) else None
-    if id_token:
-        print(f"id_token: {id_token}")
+        raise HTTPException(status_code=400, detail="Failed to obtain token from provider")
+    
+    userinfo = None
+    id_token_str = token.get("id_token") if isinstance(token, dict) else None
+    
+    if id_token_str:
         try:
-            userinfo = await client.parse_id_token(request, token)
+            userinfo = await client.parse_id_token(token, nonce=nonce)
         except Exception as e:
             print(f"Error parsing id_token: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to parse id_token: {e}")
     else:
         try:
             resp = await client.get("userinfo", token=token)
+            resp.raise_for_status()
             userinfo = resp.json()
-        except Exception:
-            raise HTTPException(status_code=400, detail="failed to fetch user info from provider")
-    email=userinfo.get("email")
-    name=userinfo.get("name") or userinfo.get("given_name")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch user info: {e}")
 
-    db=SessionLocal()
-    try:
-        user=db.query(User).filter(User.email==email).first()
-        if not user:
-            user=User(
-                username=email.split("@")[0] + str(random.randint(0, 9999)),
-                email=email,
-                fullname=name,
-                password=""
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        print(user)
-        jwt_token=auth_utils.create_access_token(cast(str,user.username))
-    finally:
-        db.close()
-    print(jwt_token)
-    return {"access_token":jwt_token,"token_type":"bearer"}
+    if not userinfo:
+        raise HTTPException(status_code=400, detail="Could not fetch user information.")
+
+    email = userinfo.get("email")
+    name = userinfo.get("name") or userinfo.get("given_name")
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not found in user info.")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        username = f"{email.split('@')[0]}_{random.randint(1000, 9999)}"
+        user = User(
+            username=username,
+            email=email,
+            fullname=name,
+            password=""
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    jwt_token = auth_utils.create_access_token(str(user.username))
+
+    return {
+        "access_token": jwt_token,
+        "token_type": "bearer",
+        "message": "User signed in successfully.",
+        "success": True,
+        "user": {
+            "username": user.username,
+            "email": user.email,
+            "fullname": user.fullname
+        }
+    }

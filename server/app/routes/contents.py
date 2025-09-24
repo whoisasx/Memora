@@ -300,10 +300,8 @@ def connect_content(content_id:Annotated[str,Body()], content_Id=Annotated[str,P
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="content/s is not in database")
         
         parent.children_ids.append(child.id)
-        print("parent before: ", parent.__dict__)
         db.commit()
         db.refresh(parent)
-        print("parent:", parent.__dict__)
     except Exception as e:
         print("error: ",e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="server error while connecting content.")
