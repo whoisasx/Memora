@@ -24,6 +24,14 @@ class Content(Base):
     __tablename__='contents'
     id=Column(String, primary_key=True, index=True, default=lambda:str(uuid.uuid4()))
     url=Column(String)
+
+    domain=Column(String)
+    favicon=Column(String,nullable=True)
+    title=Column(String,nullable=True)
+    url_description=Column(String,nullable=True)
+    thumbnail=Column(String,nullable=True)
+    site_name=Column(String)
+
     description=Column(String,nullable=True)
     color=Column(String)
     timestamp = Column(Integer, default=lambda: int(datetime.now().timestamp()))

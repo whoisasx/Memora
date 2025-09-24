@@ -25,7 +25,20 @@ class ContentBase(BaseModel):
     timestamp:Optional[int]=None
     tags:List[str]=[]
 
+class UrlBase(BaseModel):
+    domain:str
+    favicon:Optional[str]=None
+    title:Optional[str]=None
+    url_description:Optional[str]=None
+    thumbnail:Optional[str]=None
+    site_name:str
 class ContentInDB(ContentBase):
+    domain:str
+    favicon:Optional[str]=None
+    title:Optional[str]=None
+    url_description:Optional[str]=None
+    thumbnail:Optional[str]=None
+    site_name:str
     user_id:str
 
 class ContentIn(ContentBase):
@@ -50,7 +63,7 @@ class Embeddings(BaseModel):
 
 class ContentInES(BaseModel):
     id: str
-    url: HttpUrl
+    url: str
     description: Optional[str]=None
     embeddings: Embeddings
 
