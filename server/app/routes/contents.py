@@ -181,7 +181,7 @@ def update_content(content_id: Annotated[str,Path()],new_content:Annotated[Conte
             else:
                 db.execute(
                     update(Tag)
-                    .where(Tag.name == existing_tag.tagname)
+                    .where(Tag.tagname == existing_tag.tagname)
                     .values(count=Tag.count + 1)
                 )
         
