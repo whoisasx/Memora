@@ -98,18 +98,21 @@ def add_content(content:Annotated[ContentBase,Body()], req:Request, db:Session=D
         "success":True,
         "content":{
             "id":db_content.id,
+            "url":db_content.url,
+            "description":db_content.description,
+            "color":db_content.color,
+            "timestame":db_content.timestamp,
+            "tags":db_content.tags,
             "url_data":{
                 "domain":db_content.domain,
                 "favicon":db_content.favicon,
-                "title":db_content.title,
-                "description":db_content.url_description,
                 "thumbnail":db_content.thumbnail,
                 "site_name":db_content.site_name,
             }
         }
     }
 
-@router.get("/")
+@router.get("/",status_code=status.HTTP_200_OK)
 def get_contents(username:Annotated[str,Query()], req:Request, db:Session=Depends(get_db)):
     try:
         if username!=req.state.username:
@@ -121,7 +124,13 @@ def get_contents(username:Annotated[str,Query()], req:Request, db:Session=Depend
                 'description': c.description,
                 'color': c.color,
                 'timestamp': c.timestamp,
-                'tags': c.tags
+                'tags': c.tags,
+                "url_data":{
+                    "domain":c.domain,
+                    "favicon":c.favicon,
+                    "thumbnail":c.thumbnail,
+                    "site_name":c.site_name,
+                }
             }
             for c in db.query(Content).filter(Content.username==username).all()
         ]
@@ -150,7 +159,13 @@ def get_content(content_id:Annotated[str,Path()],db:Session=Depends(get_db)):
             'description': content.description,
             'color': content.color,
             'timestamp': content.timestamp,
-            'tags': content.tags
+            'tags': content.tags,
+            "url_data":{
+                "domain":content.domain,
+                "favicon":content.favicon,
+                "thumbnail":content.thumbnail,
+                "site_name":content.site_name,
+            }
         },
         "message":"content fetched",
         "success":True
@@ -280,11 +295,14 @@ def update_content(content_id: Annotated[str,Path()],new_content:Annotated[Conte
         "success":True,
         "content":{
             "id":db_content.id,
+            "url":db_content.url,
+            "description":db_content.description,
+            "color":db_content.color,
+            "timestamp":db_content.timestamp,
+            "tags":db_content.tags,
             "url_data":{
                 "domain":db_content.domain,
                 "favicon":db_content.favicon,
-                "title":db_content.title,
-                "description":db_content.url_description,
                 "thumbnail":db_content.thumbnail,
                 "site_name":db_content.site_name,
             }

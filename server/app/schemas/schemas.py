@@ -3,9 +3,9 @@ from typing import List, Optional
 
 class UserBase(BaseModel):
     username:str
-    fullname:str | None
-    email: EmailStr | None
-    authenticated: bool | None
+    fullname:Optional[str]=None
+    email: Optional[EmailStr]=None
+    authenticated: Optional[bool]=None
 
 class UserInDB(UserBase):
     hashed_password: str
