@@ -74,18 +74,53 @@
 	}
 	/* WebKit browsers (Chrome, Safari, Edge) */
 	.range::-webkit-slider-runnable-track {
-		@apply h-[2px] rounded-full bg-gray-200;
+		@apply h-[2px] rounded-full bg-slate-200 dark:bg-slate-600;
 	}
 	.range::-webkit-slider-thumb {
-		@apply h-4 w-4 rounded-full bg-blue-500;
+		@apply h-4 w-4 rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-300;
 		-webkit-appearance: none;
 		margin-top: -8px; /* center align thumb on track */
+		transition: all 0.2s ease;
 	}
 	/* Firefox */
 	.range::-moz-range-track {
-		@apply h-[2px] rounded-full bg-gray-200;
+		@apply h-[2px] rounded-full bg-slate-200 dark:bg-slate-600;
 	}
 	.range::-moz-range-thumb {
-		@apply h-4 w-4 rounded-full bg-blue-500 border-0;
+		@apply h-4 w-4 rounded-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-400 dark:hover:bg-sky-300 border-0;
+		transition: all 0.2s ease;
+	}
+
+	/* Enhanced slider styles for GraphOptions */
+	.slider-custom::-webkit-slider-thumb {
+		appearance: none;
+		height: 16px;
+		width: 16px;
+		border-radius: 50%;
+		background: rgb(14 165 233);
+		cursor: pointer;
+		border: 2px solid white;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		transition: all 0.2s ease;
+	}
+	.slider-custom::-webkit-slider-thumb:hover {
+		background: rgb(2 132 199);
+		transform: scale(1.1);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+	}
+	.slider-custom::-moz-range-thumb {
+		height: 16px;
+		width: 16px;
+		border-radius: 50%;
+		background: rgb(14 165 233);
+		cursor: pointer;
+		border: 2px solid white;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		transition: all 0.2s ease;
+	}
+	.slider-custom::-moz-range-thumb:hover {
+		background: rgb(2 132 199);
+		transform: scale(1.1);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 	}
 }

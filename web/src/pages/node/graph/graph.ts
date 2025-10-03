@@ -698,23 +698,23 @@ export class Graph {
 		this.linkSelection
 			?.style("opacity", 0)
 			.transition()
-			.duration(2500)
+			.duration(2000)
 			.delay((_d, i) => i * 100)
-			.ease(d3.easeElasticOut.amplitude(1.5).period(0.5))
+			.ease(d3.easeElasticOut.amplitude(1.7).period(0.3))
 			.style("opacity", 1);
 
 		this.nodeSelection
 			?.transition()
-			.duration(2500)
+			.duration(2000)
 			.delay((_d, i) => i * 100)
-			.ease(d3.easeElasticOut.amplitude(1.4).period(0.4))
+			.ease(d3.easeElasticOut.amplitude(1.5).period(0.4))
 			.attr("r", this.nodeSize)
 			.style("opacity", 1);
 
 		this.labelSelection
 			?.style("opacity", 0)
 			.transition()
-			.duration(2000)
+			.duration(1800)
 			.delay((_d, i) => i * 100 + 300)
 			.ease(d3.easeBackOut.overshoot(1.7))
 			.style("opacity", this.textFade);

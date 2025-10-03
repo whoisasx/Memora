@@ -12,6 +12,7 @@ import { RiResetLeftFill } from "react-icons/ri";
 import { ThemeButton } from "../../components/dashboard/NavBar";
 import { LuSettings2 } from "react-icons/lu";
 import { AiOutlineClose } from "react-icons/ai";
+import { AnimatePresence, motion } from "motion/react";
 import AnimatedBackground from "../../components/background/AnimatedBackground";
 
 export default function Graphview() {
@@ -126,35 +127,60 @@ export default function Graphview() {
 			<AnimatedBackground />
 			<div className="flex h-10 w-40 md:w-60 px-2 justify-between py-2 border border-sky-200 dark:border-sky-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl items-center absolute top-2 right-2 shadow-lg shadow-sky-500/20 dark:shadow-sky-400/10 z-50">
 				<div className="flex h-full gap-2 items-center">
-					<Icon
-						onClick={() => {
-							attributeStore.setTextFade(0);
-							attributeStore.setNodeSize(1.5);
-							attributeStore.setLineThickness(1.0);
-							attributeStore.setCenterForces(0.6);
-							attributeStore.setRepelForces(10);
-							attributeStore.setLinkForces(1.0);
-							attributeStore.setLinkDistance(250);
-						}}
-						className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
+					<motion.div
+						whileTap={{ scale: 0.9 }}
+						transition={{ duration: 0.1 }}
 					>
-						<RiResetLeftFill />
-					</Icon>
-					{activeOptions ? (
 						<Icon
+							onClick={() => {
+								attributeStore.setTextFade(0);
+								attributeStore.setNodeSize(1.5);
+								attributeStore.setLineThickness(1.0);
+								attributeStore.setCenterForces(0.6);
+								attributeStore.setRepelForces(10);
+								attributeStore.setLinkForces(1.0);
+								attributeStore.setLinkDistance(250);
+							}}
 							className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
-							onClick={() => setActiveOptions(false)}
 						>
-							<AiOutlineClose />
+							<RiResetLeftFill />
 						</Icon>
-					) : (
-						<Icon
-							className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
-							onClick={() => setActiveOptions((prev) => !prev)}
-						>
-							<LuSettings2 />
-						</Icon>
-					)}
+					</motion.div>
+					<AnimatePresence mode="wait">
+						{activeOptions ? (
+							<motion.div
+								key="close"
+								initial={{ opacity: 0, scale: 0.8 }}
+								animate={{ opacity: 1, scale: 1 }}
+								exit={{ opacity: 0, scale: 0.8 }}
+								transition={{ duration: 0.15 }}
+							>
+								<Icon
+									className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
+									onClick={() => setActiveOptions(false)}
+								>
+									<AiOutlineClose />
+								</Icon>
+							</motion.div>
+						) : (
+							<motion.div
+								key="settings"
+								initial={{ opacity: 0, scale: 0.8 }}
+								animate={{ opacity: 1, scale: 1 }}
+								exit={{ opacity: 0, scale: 0.8 }}
+								transition={{ duration: 0.15 }}
+							>
+								<Icon
+									className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
+									onClick={() =>
+										setActiveOptions((prev) => !prev)
+									}
+								>
+									<LuSettings2 />
+								</Icon>
+							</motion.div>
+						)}
+					</AnimatePresence>
 				</div>
 
 				<ThemeButton className="!w-8 !h-8" />
