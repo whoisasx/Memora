@@ -184,6 +184,44 @@ export class Graph {
 		}
 	}
 
+	updateDimensions(width: number, height: number) {
+		const oldWidth = this.width;
+		const oldHeight = this.height;
+
+		// Update internal dimensions
+		this.width = width;
+		this.height = height;
+
+		// Update SVG dimensions
+		this.svg.attr("width", width).attr("height", height);
+
+		// Scale existing node positions to maintain relative positioning
+		if (this.nodeSelection && oldWidth > 0 && oldHeight > 0) {
+			const scaleX = width / oldWidth;
+			const scaleY = height / oldHeight;
+
+			// Update node positions proportionally
+			this.nodes.forEach((node) => {
+				if (node.x !== undefined && node.y !== undefined) {
+					node.x = node.x * scaleX;
+					node.y = node.y * scaleY;
+
+					// Update fixed positions if they exist
+					if (node.fx !== undefined && node.fx !== null) {
+						node.fx = node.fx * scaleX;
+					}
+					if (node.fy !== undefined && node.fy !== null) {
+						node.fy = node.fy * scaleY;
+					}
+				}
+			});
+		}
+
+		// Redraw the graph with new dimensions
+		// This will restart the simulation with updated forces
+		this.drawGraph();
+	}
+
 	private getNodeColor(nodeId: string): string {
 		if (!this.degrees || typeof this.degrees.get !== "function") {
 			console.warn("Degrees is not a proper Map, using default color");
@@ -198,34 +236,18 @@ export class Graph {
 		const { indeg, outdeg } = nodeDegree;
 
 		if (indeg === 0 && outdeg === 0) {
-			// Isolated node (no connections)
-			return this.theme === "dark" ? "#6b7280" : "#9ca3af"; // Gray
+			// Isolated node (no connections) - Enhanced with subtle gradient colors
+			return this.theme === "dark" ? "#64748b" : "#94a3b8"; // Refined gray
 		} else if (indeg === 0 && outdeg > 0) {
-			// Source node (only outgoing connections)
-			return this.theme === "dark" ? "#059669" : "#10b981"; // Green
+			// Source node (only outgoing connections) - Vibrant emerald/teal
+			return this.theme === "dark" ? "#059669" : "#0d9488"; // Enhanced teal
 		} else if (indeg > 0 && outdeg === 0) {
-			// Sink node (only incoming connections)
-			return this.theme === "dark" ? "#d97706" : "#f59e0b"; // Orange
+			// Sink node (only incoming connections) - Warm amber/orange
+			return this.theme === "dark" ? "#ea580c" : "#dc2626"; // Enhanced orange/red
 		} else {
-			// Hub node (both incoming and outgoing connections)
-			return this.theme === "dark" ? "#2563eb" : "#3b82f6"; // Blue
+			// Hub node (both incoming and outgoing connections) - Sky blue theme
+			return this.theme === "dark" ? "#0ea5e9" : "#2563eb"; // Enhanced sky blue
 		}
-	}
-
-	private hexToRgba(hex: string, alpha: number) {
-		if (!hex) return `rgba(100,116,139,${alpha})`;
-		let h = hex.replace("#", "").trim();
-		if (h.length === 3) {
-			h = h
-				.split("")
-				.map((c) => c + c)
-				.join("");
-		}
-		if (h.length !== 6) return `rgba(100,116,139,${alpha})`;
-		const r = parseInt(h.substring(0, 2), 16);
-		const g = parseInt(h.substring(2, 4), 16);
-		const b = parseInt(h.substring(4, 6), 16);
-		return `rgba(${r},${g},${b},${alpha})`;
 	}
 
 	drawGraph() {
@@ -256,14 +278,19 @@ export class Graph {
 				)
 			);
 
+		// Enhanced link styling with better colors and gradients
 		this.linkSelection = this.svg
 			.append("g")
-			.attr("stroke", "#aaa")
 			.selectAll("line")
 			.data(this.links)
 			.join("line")
-			.attr("stroke-width", this.lineThickness);
+			.attr("stroke", this.theme === "dark" ? "#334155" : "#cbd5e1") // Better contrast
+			.attr("stroke-width", this.lineThickness)
+			.attr("stroke-opacity", 0.7)
+			.attr("stroke-linecap", "round") // Rounded line caps for smoother appearance
+			.style("filter", "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))"); // Subtle shadow
 
+		// Enhanced node styling with gradients and better shadows
 		this.nodeSelection = this.svg
 			.append("g")
 			.selectAll<SVGCircleElement, Node>("circle")
@@ -271,8 +298,16 @@ export class Graph {
 			.join("circle")
 			.attr("r", 0)
 			.attr("fill", (d) => this.getNodeColor(d.id))
+			.attr("stroke", this.theme === "dark" ? "#1e293b" : "#ffffff") // Border color
+			.attr("stroke-width", 2)
 			.style("cursor", "pointer")
 			.style("opacity", 0)
+			.style(
+				"filter",
+				this.theme === "dark"
+					? "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.05))"
+					: "drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15)) drop-shadow(0 0 0 1px rgba(0, 0, 0, 0.05))"
+			) // Enhanced shadows and subtle inner border
 			.call(
 				d3
 					.drag<SVGCircleElement, Node>()
@@ -309,6 +344,7 @@ export class Graph {
 				this.handleMouseOut(event, d);
 			});
 
+		// Enhanced label styling with better typography and contrast
 		this.labelSelection = this.svg
 			.append("g")
 			.selectAll("text")
@@ -326,16 +362,28 @@ export class Graph {
 					}
 					if (content.description) {
 						return (
-							content.description.slice(0, 10) +
-							(content.description.length > 10 ? "..." : "")
+							content.description.slice(0, 12) +
+							(content.description.length > 12 ? "..." : "")
 						);
 					}
 				}
 				return node.id.slice(0, 8) + (node.id.length > 8 ? "..." : "");
 			})
-			.attr("font-size", 12)
-			.attr("dy", -15)
-			.attr("opacity", 0);
+			.attr("font-size", 11)
+			.attr("font-weight", 500)
+			.attr("font-family", "system-ui, -apple-system, sans-serif")
+			.attr("text-anchor", "middle")
+			.attr("dy", -18)
+			.attr("fill", this.theme === "dark" ? "#e2e8f0" : "#334155")
+			.attr("opacity", 0)
+			.style("pointer-events", "none")
+			.style(
+				"text-shadow",
+				this.theme === "dark"
+					? "0 1px 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.4)"
+					: "0 1px 2px rgba(255, 255, 255, 0.9), 0 0 4px rgba(255, 255, 255, 0.6)"
+			); // Enhanced text shadow for better readability
+
 		if (!this.hasAnimated) {
 			this.animateEntrance();
 		} else {
@@ -386,30 +434,50 @@ export class Graph {
 			if (this.currentHoveredNode === d.id && !this.isDragging) {
 				this.highlightConnectedNodes(d.id);
 			}
-		}, 500);
+		}, 300); // Reduced timeout for more responsive interaction
 
+		// Enhanced hover animation with scale and glow effect
 		d3.select(event.currentTarget as SVGCircleElement)
 			.transition()
 			.duration(200)
-			.attr("r", this.nodeSize * 1.25);
+			.ease(d3.easeBackOut.overshoot(1.2))
+			.attr("r", this.nodeSize * 1.3)
+			.style(
+				"filter",
+				this.theme === "dark"
+					? "drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 12px rgba(14, 165, 233, 0.4))"
+					: "drop-shadow(0 6px 20px rgba(0, 0, 0, 0.2)) drop-shadow(0 0 16px rgba(37, 99, 235, 0.3))"
+			);
+
 		this.showPreviewCard(event as MouseEvent, d.id);
 	}
+
 	handleMouseMove(event: MouseEvent, _d: Node) {
 		if (this.isDragging) return;
 		this.updatePreviewCardPosition(event);
 	}
+
 	handleMouseOut(event: MouseEvent, _d: Node) {
 		this.currentHoveredNode = null;
 		this.clearHoverTimeout();
 		this.clearHighlighting();
 
+		// Smooth return to original state
 		d3.select(event.currentTarget as SVGCircleElement)
 			.transition()
-			.duration(150)
-			.attr("r", this.nodeSize);
+			.duration(200)
+			.ease(d3.easeBackIn.overshoot(1.1))
+			.attr("r", this.nodeSize)
+			.style(
+				"filter",
+				this.theme === "dark"
+					? "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.05))"
+					: "drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15)) drop-shadow(0 0 0 1px rgba(0, 0, 0, 0.05))"
+			);
+
 		setTimeout(() => {
 			this.hidePreviewCard();
-		}, 2000);
+		}, 2500); // Reduced timeout for snappier feel
 	}
 
 	private ensurePreviewEl() {
@@ -417,22 +485,31 @@ export class Graph {
 		const el = document.createElement("div");
 		el.style.position = "absolute";
 		el.style.pointerEvents = "auto";
-		el.style.width = "200px";
-		el.style.height = "120px";
-		el.style.borderRadius = "8px";
-		el.style.boxShadow = "0 6px 18px rgba(0,0,0,0.15)";
+		el.style.width = "240px"; // Slightly wider for better content display
+		el.style.height = "140px"; // Taller for better proportions
+		el.style.borderRadius = "12px"; // More rounded corners
+		el.style.boxShadow =
+			this.theme === "dark"
+				? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)"
+				: "0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05)"; // Enhanced shadows
 		el.style.zIndex = "9999";
 		el.style.display = "none";
 		el.style.backgroundSize = "cover";
 		el.style.backgroundPosition = "center";
 		el.style.backgroundRepeat = "no-repeat";
 		el.style.overflow = "hidden";
+		el.style.backdropFilter = "blur(8px)"; // Add backdrop blur
+		el.style.border =
+			this.theme === "dark"
+				? "1px solid rgba(148, 163, 184, 0.2)"
+				: "1px solid rgba(148, 163, 184, 0.3)"; // Subtle border
 
 		if (this.theme === "dark") {
-			el.style.backgroundColor = "#0f1724";
+			el.style.backgroundColor = "rgba(15, 23, 36, 0.95)"; // More transparent
 		} else {
-			el.style.backgroundColor = "#ffffff";
+			el.style.backgroundColor = "rgba(255, 255, 255, 0.95)"; // More transparent
 		}
+
 		// Remove mouse event listeners that were causing issues
 		el.addEventListener("mouseenter", (e) => {
 			e.stopPropagation();
@@ -441,6 +518,7 @@ export class Graph {
 		el.addEventListener("mouseleave", () => {
 			this.hidePreviewCard();
 		});
+
 		const overlay = document.createElement("div");
 		overlay.style.position = "absolute";
 		overlay.style.bottom = "0";
@@ -448,47 +526,73 @@ export class Graph {
 		overlay.style.right = "0";
 		overlay.style.background =
 			this.theme === "dark"
-				? "rgba(15, 23, 36, 0.9)"
-				: "rgba(255, 255, 255, 0.9)";
-		overlay.style.padding = "8px";
+				? "linear-gradient(to top, rgba(15, 23, 36, 0.98) 0%, rgba(15, 23, 36, 0.8) 70%, transparent 100%)"
+				: "linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.8) 70%, transparent 100%)"; // Gradient overlay
+		overlay.style.padding = "12px"; // More padding
 		overlay.style.backdropFilter = "blur(4px)";
 		overlay.style.display = "flex";
 		overlay.style.justifyContent = "space-between";
 		overlay.style.alignItems = "center";
-		overlay.style.gap = "8px";
+		overlay.style.gap = "10px";
 		el.appendChild(overlay);
 
 		const desc = document.createElement("div");
 		desc.className = "preview-desc";
-		desc.style.fontSize = "11px";
-		desc.style.lineHeight = "1.3";
+		desc.style.fontSize = "12px"; // Slightly larger text
+		desc.style.lineHeight = "1.4"; // Better line height
 		desc.style.flex = "1";
 		desc.style.overflow = "hidden";
 		desc.style.textOverflow = "ellipsis";
 		desc.style.whiteSpace = "nowrap";
-		desc.style.color = this.theme === "dark" ? "#e6edf3" : "#0f1724";
+		desc.style.color = this.theme === "dark" ? "#e2e8f0" : "#1e293b"; // Better contrast
+		desc.style.fontWeight = "500"; // Medium weight
+		desc.style.fontFamily = "system-ui, -apple-system, sans-serif"; // Better font
 		overlay.appendChild(desc);
 
 		const openBtn = document.createElement("button");
 		openBtn.innerHTML = "🔗"; // Link icon
-		openBtn.style.width = "24px";
-		openBtn.style.height = "24px";
-		openBtn.style.borderRadius = "4px";
+		openBtn.style.width = "28px"; // Slightly larger
+		openBtn.style.height = "28px";
+		openBtn.style.borderRadius = "6px"; // More rounded
 		openBtn.style.border = "none";
 		openBtn.style.cursor = "pointer";
-		openBtn.style.fontSize = "12px";
+		openBtn.style.fontSize = "13px";
 		openBtn.style.display = "flex";
 		openBtn.style.alignItems = "center";
 		openBtn.style.justifyContent = "center";
 		openBtn.style.flexShrink = "0";
+		openBtn.style.transition = "all 0.2s ease";
 		openBtn.className = "preview-open-btn";
+
 		if (this.theme === "dark") {
-			openBtn.style.background = "#1f6feb";
+			openBtn.style.background =
+				"linear-gradient(135deg, #0ea5e9, #3b82f6)"; // Sky gradient
 			openBtn.style.color = "#fff";
+			openBtn.style.boxShadow = "0 2px 8px rgba(14, 165, 233, 0.3)";
 		} else {
-			openBtn.style.background = "#2563eb";
+			openBtn.style.background =
+				"linear-gradient(135deg, #2563eb, #1d4ed8)"; // Blue gradient
 			openBtn.style.color = "#fff";
+			openBtn.style.boxShadow = "0 2px 8px rgba(37, 99, 235, 0.3)";
 		}
+
+		// Add hover effect for button
+		openBtn.addEventListener("mouseenter", () => {
+			openBtn.style.transform = "scale(1.05)";
+			openBtn.style.boxShadow =
+				this.theme === "dark"
+					? "0 4px 12px rgba(14, 165, 233, 0.4)"
+					: "0 4px 12px rgba(37, 99, 235, 0.4)";
+		});
+
+		openBtn.addEventListener("mouseleave", () => {
+			openBtn.style.transform = "scale(1)";
+			openBtn.style.boxShadow =
+				this.theme === "dark"
+					? "0 2px 8px rgba(14, 165, 233, 0.3)"
+					: "0 2px 8px rgba(37, 99, 235, 0.3)";
+		});
+
 		overlay.appendChild(openBtn);
 		document.body.appendChild(el);
 		this.previewEl = el;
@@ -505,7 +609,24 @@ export class Graph {
 		const openBtn = this.previewEl.querySelector(
 			".preview-open-btn"
 		) as HTMLButtonElement;
-		descEl.textContent = content?.description || "No description";
+
+		// Enhanced description display
+		if (content?.description) {
+			descEl.textContent =
+				content.description.length > 45
+					? content.description.slice(0, 45) + "..."
+					: content.description;
+		} else if (content?.url) {
+			try {
+				const url = new URL(content.url);
+				descEl.textContent = url.hostname.replace("www.", "");
+			} catch {
+				descEl.textContent = "External Link";
+			}
+		} else {
+			descEl.textContent = "No description available";
+		}
+
 		openBtn.onclick = (ev) => {
 			ev.stopPropagation();
 			if (content && content.url) {
@@ -513,23 +634,135 @@ export class Graph {
 			}
 		};
 
+		// Enhanced background styling
 		this.previewEl.style.backgroundImage = "";
 		this.previewEl.style.backgroundColor = "";
+
 		if (content && content.url_data && content.url_data.thumbnail) {
 			this.previewEl.style.backgroundImage = `url(${content.url_data.thumbnail})`;
+			// Add subtle overlay for better text readability
+			this.previewEl.style.backgroundBlendMode = "overlay";
 		} else {
-			const base =
-				content && (content as any).color
-					? (content as any).color
-					: this.theme === "dark"
-					? "#0f1724"
-					: "#ffffff";
-			const c1 = this.hexToRgba(base, 0.3);
-			const c2 = this.hexToRgba(base, 0.8);
-			this.previewEl.style.backgroundImage = `linear-gradient(135deg, ${c2}, ${c1})`;
+			// Enhanced gradient backgrounds based on node type
+			const nodeColor = this.getNodeColor(id);
+			const gradientColors = this.generateGradientFromColor(nodeColor);
+			this.previewEl.style.backgroundImage = `linear-gradient(135deg, ${gradientColors.start}, ${gradientColors.end})`;
 		}
+
+		// Add entrance animation
 		this.previewEl.style.display = "block";
+		this.previewEl.style.opacity = "0";
+		this.previewEl.style.transform = "scale(0.9) translateY(10px)";
+
+		setTimeout(() => {
+			if (this.previewEl) {
+				this.previewEl.style.transition =
+					"all 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
+				this.previewEl.style.opacity = "1";
+				this.previewEl.style.transform = "scale(1) translateY(0)";
+			}
+		}, 10);
+
 		this.updatePreviewCardPosition(event);
+	}
+
+	private generateGradientFromColor(color: string): {
+		start: string;
+		end: string;
+	} {
+		// Generate complementary gradient colors based on the node color
+		const colorMap: { [key: string]: { start: string; end: string } } = {
+			"#64748b": {
+				// Gray
+				start:
+					this.theme === "dark"
+						? "rgba(100, 116, 139, 0.4)"
+						: "rgba(148, 163, 184, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(51, 65, 85, 0.6)"
+						: "rgba(203, 213, 225, 0.5)",
+			},
+			"#94a3b8": {
+				// Light gray
+				start:
+					this.theme === "dark"
+						? "rgba(148, 163, 184, 0.4)"
+						: "rgba(203, 213, 225, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(100, 116, 139, 0.6)"
+						: "rgba(148, 163, 184, 0.5)",
+			},
+			"#059669": {
+				// Dark teal
+				start:
+					this.theme === "dark"
+						? "rgba(5, 150, 105, 0.4)"
+						: "rgba(13, 148, 136, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(4, 120, 87, 0.6)"
+						: "rgba(15, 118, 110, 0.5)",
+			},
+			"#0d9488": {
+				// Teal
+				start:
+					this.theme === "dark"
+						? "rgba(13, 148, 136, 0.4)"
+						: "rgba(20, 184, 166, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(15, 118, 110, 0.6)"
+						: "rgba(13, 148, 136, 0.5)",
+			},
+			"#ea580c": {
+				// Orange
+				start:
+					this.theme === "dark"
+						? "rgba(234, 88, 12, 0.4)"
+						: "rgba(220, 38, 38, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(194, 65, 12, 0.6)"
+						: "rgba(185, 28, 28, 0.5)",
+			},
+			"#dc2626": {
+				// Red
+				start:
+					this.theme === "dark"
+						? "rgba(220, 38, 38, 0.4)"
+						: "rgba(239, 68, 68, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(185, 28, 28, 0.6)"
+						: "rgba(220, 38, 38, 0.5)",
+			},
+			"#0ea5e9": {
+				// Sky blue
+				start:
+					this.theme === "dark"
+						? "rgba(14, 165, 233, 0.4)"
+						: "rgba(37, 99, 235, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(2, 132, 199, 0.6)"
+						: "rgba(29, 78, 216, 0.5)",
+			},
+			"#2563eb": {
+				// Blue
+				start:
+					this.theme === "dark"
+						? "rgba(37, 99, 235, 0.4)"
+						: "rgba(59, 130, 246, 0.3)",
+				end:
+					this.theme === "dark"
+						? "rgba(29, 78, 216, 0.6)"
+						: "rgba(37, 99, 235, 0.5)",
+			},
+		};
+
+		return colorMap[color] || colorMap["#64748b"]; // Default to gray
 	}
 
 	private updatePreviewCardPosition(event: MouseEvent) {
@@ -551,7 +784,19 @@ export class Graph {
 
 	private hidePreviewCard() {
 		if (!this.previewEl) return;
-		this.previewEl.style.display = "none";
+
+		// Add exit animation
+		this.previewEl.style.transition =
+			"all 0.15s cubic-bezier(0.4, 0, 1, 1)";
+		this.previewEl.style.opacity = "0";
+		this.previewEl.style.transform = "scale(0.95) translateY(5px)";
+
+		setTimeout(() => {
+			if (this.previewEl) {
+				this.previewEl.style.display = "none";
+				this.previewEl.style.transition = "";
+			}
+		}, 150);
 	}
 
 	private clearHoverTimeout() {
@@ -590,17 +835,31 @@ export class Graph {
 
 		const { connectedNodes } = this.getConnectedElements(nodeId);
 		this.createOverlay();
+
+		// Enhanced node highlighting with better visual feedback
 		this.nodeSelection
 			?.style("opacity", (d) => {
 				const isConnected = connectedNodes.has(d.id);
-				return isConnected ? 1 : 0.2;
+				return isConnected ? 1 : 0.15; // More contrast
 			})
 			.style("filter", (d) => {
 				const isConnected = connectedNodes.has(d.id);
-				return isConnected
-					? "drop-shadow(0 0 8px rgba(59, 130, 246, 0.6))"
-					: "none";
+				if (isConnected) {
+					const nodeColor = this.getNodeColor(d.id);
+					return this.theme === "dark"
+						? `drop-shadow(0 0 16px ${nodeColor}88) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4))`
+						: `drop-shadow(0 0 20px ${nodeColor}66) drop-shadow(0 4px 16px rgba(0, 0, 0, 0.2))`;
+				}
+				return "none";
+			})
+			.transition()
+			.duration(200)
+			.attr("r", (d) => {
+				const isConnected = connectedNodes.has(d.id);
+				return isConnected ? this.nodeSize * 1.1 : this.nodeSize * 0.9;
 			});
+
+		// Enhanced link highlighting with dynamic colors and thickness
 		this.linkSelection
 			?.style("opacity", (d) => {
 				const sourceId =
@@ -612,7 +871,7 @@ export class Graph {
 						? (d.target as Node).id
 						: String(d.target);
 				const isConnected = sourceId === nodeId || targetId === nodeId;
-				return isConnected ? 1 : 0.1;
+				return isConnected ? 0.9 : 0.08; // More dramatic contrast
 			})
 			.style("stroke", (d) => {
 				const sourceId =
@@ -624,11 +883,13 @@ export class Graph {
 						? (d.target as Node).id
 						: String(d.target);
 				const isConnected = sourceId === nodeId || targetId === nodeId;
-				return isConnected
-					? this.theme === "dark"
-						? "#3b82f6"
-						: "#2563eb"
-					: "#aaa";
+
+				if (isConnected) {
+					// Use the source node color for the link
+					const sourceColor = this.getNodeColor(sourceId);
+					return sourceColor;
+				}
+				return this.theme === "dark" ? "#334155" : "#cbd5e1";
 			})
 			.style("stroke-width", (d) => {
 				const sourceId =
@@ -641,30 +902,85 @@ export class Graph {
 						: String(d.target);
 				const isConnected = sourceId === nodeId || targetId === nodeId;
 				return isConnected
-					? this.lineThickness * 1.5
-					: this.lineThickness;
+					? this.lineThickness * 2 // More dramatic thickness
+					: this.lineThickness * 0.5;
+			})
+			.style("filter", (d) => {
+				const sourceId =
+					typeof d.source === "object"
+						? (d.source as Node).id
+						: String(d.source);
+				const targetId =
+					typeof d.target === "object"
+						? (d.target as Node).id
+						: String(d.target);
+				const isConnected = sourceId === nodeId || targetId === nodeId;
+
+				if (isConnected) {
+					const sourceColor = this.getNodeColor(sourceId);
+					return `drop-shadow(0 0 6px ${sourceColor}44)`;
+				}
+				return "none";
 			});
+
+		// Enhanced label highlighting
 		this.labelSelection
 			?.style("opacity", (d) =>
-				connectedNodes.has(d.id) ? this.textFade : this.textFade * 0.2
+				connectedNodes.has(d.id) ? this.textFade : this.textFade * 0.15
 			)
 			.style("font-weight", (d) =>
 				connectedNodes.has(d.id) ? "600" : "400"
-			);
+			)
+			.style("font-size", (d) =>
+				connectedNodes.has(d.id) ? "12px" : "11px"
+			)
+			.style("filter", (d) => {
+				const isConnected = connectedNodes.has(d.id);
+				if (isConnected) {
+					// Enhanced text shadow for connected labels
+					return this.theme === "dark"
+						? "drop-shadow(0 0 4px rgba(255, 255, 255, 0.4))"
+						: "drop-shadow(0 0 4px rgba(0, 0, 0, 0.3))";
+				} else {
+					// Blur effect for non-connected labels
+					return "blur(1px) opacity(0.5)";
+				}
+			});
 	}
 
 	private clearHighlighting() {
 		if (!this.isHighlighting) return;
 		this.isHighlighting = false;
 		this.removeOverlay();
-		this.nodeSelection?.style("opacity", 1).style("filter", "none");
+
+		// Smooth transition back to normal state
+		this.nodeSelection
+			?.transition()
+			.duration(300)
+			.style("opacity", 1)
+			.style(
+				"filter",
+				this.theme === "dark"
+					? "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 1px rgba(255, 255, 255, 0.05))"
+					: "drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15)) drop-shadow(0 0 0 1px rgba(0, 0, 0, 0.05))"
+			)
+			.attr("r", this.nodeSize);
+
 		this.linkSelection
-			?.style("opacity", 1)
-			.style("stroke", "#aaa")
-			.style("stroke-width", this.lineThickness);
+			?.transition()
+			.duration(250)
+			.style("opacity", 0.7)
+			.style("stroke", this.theme === "dark" ? "#334155" : "#cbd5e1")
+			.style("stroke-width", this.lineThickness)
+			.style("filter", "none");
+
 		this.labelSelection
-			?.style("opacity", this.textFade)
-			.style("font-weight", "400");
+			?.transition()
+			.duration(250)
+			.style("opacity", this.textFade)
+			.style("font-weight", "500")
+			.style("font-size", "11px")
+			.style("filter", "none"); // Remove any blur effects
 	}
 
 	private createOverlay() {
@@ -677,10 +993,11 @@ export class Graph {
 		overlay.style.width = "100vw";
 		overlay.style.height = "100vh";
 		overlay.style.backgroundColor =
-			this.theme === "dark" ? "rgba(0, 0, 0, 0.6)" : "rgba(0, 0, 0, 0.5)";
+			this.theme === "dark" ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.6)"; // Slightly stronger overlay
 		overlay.style.pointerEvents = "none";
 		overlay.style.zIndex = "1";
-		overlay.style.transition = "opacity 0.2s ease-in-out";
+		overlay.style.transition = "opacity 0.3s ease-in-out";
+		overlay.style.backdropFilter = "blur(2px)"; // Add subtle blur
 
 		document.body.appendChild(overlay);
 		this.overlayEl = overlay;
@@ -695,28 +1012,39 @@ export class Graph {
 
 	private animateEntrance() {
 		this.setHasAnimeted(true);
+
+		// Enhanced link entrance animation with staggered timing
 		this.linkSelection
 			?.style("opacity", 0)
+			.style("stroke-dasharray", "5,5")
+			.style("stroke-dashoffset", "10")
 			.transition()
-			.duration(2000)
-			.delay((_d, i) => i * 100)
-			.ease(d3.easeElasticOut.amplitude(1.7).period(0.3))
-			.style("opacity", 1);
+			.duration(1800)
+			.delay((_d, i) => i * 80)
+			.ease(d3.easeBackOut.overshoot(1.2))
+			.style("opacity", 0.7)
+			.style("stroke-dasharray", "0,0")
+			.style("stroke-dashoffset", "0");
 
+		// Enhanced node entrance animation with elastic effect
 		this.nodeSelection
-			?.transition()
-			.duration(2000)
-			.delay((_d, i) => i * 100)
-			.ease(d3.easeElasticOut.amplitude(1.5).period(0.4))
+			?.style("opacity", 0)
+			.transition()
+			.duration(2200)
+			.delay((_d, i) => i * 120)
+			.ease(d3.easeElasticOut.amplitude(1.8).period(0.5))
 			.attr("r", this.nodeSize)
 			.style("opacity", 1);
 
+		// Enhanced label entrance animation with bounce effect
 		this.labelSelection
 			?.style("opacity", 0)
+			.style("transform", "translateY(10px)")
 			.transition()
-			.duration(1800)
-			.delay((_d, i) => i * 100 + 300)
-			.ease(d3.easeBackOut.overshoot(1.7))
-			.style("opacity", this.textFade);
+			.duration(2000)
+			.delay((_d, i) => i * 120 + 400)
+			.ease(d3.easeBounceOut)
+			.style("opacity", this.textFade)
+			.style("transform", "translateY(0px)");
 	}
 }

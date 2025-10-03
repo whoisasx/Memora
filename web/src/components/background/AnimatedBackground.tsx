@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useThemeStore } from "../../store/themeStore";
+import { useDebouncedCallback } from "../../hooks/debounceHook";
 
 interface AnimatedNode {
 	x: number;
@@ -29,21 +30,41 @@ export default function AnimatedBackground() {
 	const particlesRef = useRef<FloatingParticle[]>([]);
 	const { theme } = useThemeStore();
 
+	// Debounced resize handler for better performance - must be at component level
+	const [debouncedResize] = useDebouncedCallback(
+		(canvas: HTMLCanvasElement, initNodes: () => void) => {
+			const newWidth = window.innerWidth;
+			const newHeight = window.innerHeight;
+
+			// Store previous dimensions to check for significant changes
+			const prevWidth = canvas.width;
+			const prevHeight = canvas.height;
+
+			// Only resize if dimensions actually changed
+			if (canvas.width !== newWidth || canvas.height !== newHeight) {
+				canvas.width = newWidth;
+				canvas.height = newHeight;
+
+				// Reinitialize nodes when canvas size changes significantly
+				if (prevWidth > 0 && prevHeight > 0) {
+					const sizeChangeRatio = Math.abs(
+						(newWidth * newHeight) / (prevWidth * prevHeight) - 1
+					);
+					if (sizeChangeRatio > 0.1) {
+						initNodes();
+					}
+				}
+			}
+		},
+		150
+	);
+
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
-
-		// Set canvas size
-		const resizeCanvas = () => {
-			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
-		};
-
-		resizeCanvas();
-		window.addEventListener("resize", resizeCanvas);
 
 		// Define colors based on theme
 		const colors = {
@@ -67,7 +88,7 @@ export default function AnimatedBackground() {
 
 		const currentColors = colors[theme];
 
-		// Initialize animated nodes
+		// Initialize animated nodes function
 		const initNodes = () => {
 			nodesRef.current = [];
 			particlesRef.current = [];
@@ -108,7 +129,19 @@ export default function AnimatedBackground() {
 			}
 		};
 
+		// Create resize handler that uses the debounced callback
+		const handleResize = () => {
+			debouncedResize(canvas, initNodes);
+		};
+
+		// Initial setup
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		// Initialize nodes after canvas is set up
 		initNodes();
+
+		window.addEventListener("resize", handleResize);
 
 		// Animation loop
 		const animate = () => {
@@ -254,7 +287,7 @@ export default function AnimatedBackground() {
 		animate();
 
 		return () => {
-			window.removeEventListener("resize", resizeCanvas);
+			window.removeEventListener("resize", handleResize);
 			if (animationRef.current) {
 				cancelAnimationFrame(animationRef.current);
 			}
