@@ -38,7 +38,7 @@ export default function Searchbar({
 	};
 
 	return (
-		<div className="w-full relative">
+		<div className="max-w-7xl w-full relative">
 			{/* Hero Section with Floating Elements */}
 			<div className="relative mb-8">
 				{/* Background Particles */}

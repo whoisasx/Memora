@@ -174,7 +174,7 @@ export default function Graphview() {
 						<Icon
 							onClick={() => {
 								attributeStore.setTextFade(0);
-								attributeStore.setNodeSize(1.5);
+								attributeStore.setNodeSize(1.75);
 								attributeStore.setLineThickness(1.0);
 								attributeStore.setCenterForces(0.6);
 								attributeStore.setRepelForces(10);

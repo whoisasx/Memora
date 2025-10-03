@@ -23,12 +23,12 @@ export class Graph {
 
 	private textFade: number =
 		(1 - useAttributeStore.getState().textFade) * 100;
-	private nodeSize: number = useAttributeStore.getState().nodeSize * 4;
+	private nodeSize: number = useAttributeStore.getState().nodeSize * 5;
 	private lineThickness: number =
-		useAttributeStore.getState().lineThickness * 1.25;
+		useAttributeStore.getState().lineThickness * 1.5;
 	private centerForces: number = useAttributeStore.getState().centerForces;
 	private linkForces: number = useAttributeStore.getState().linkForces;
-	private repelForces: number = useAttributeStore.getState().repelForces * 10;
+	private repelForces: number = useAttributeStore.getState().repelForces * 12;
 	private linkDistance: number = useAttributeStore.getState().linkDistance;
 
 	private nodeSelection: d3.Selection<any, Node, any, unknown> | null = null;
@@ -352,7 +352,7 @@ export class Graph {
 					.on("drag", (event, d) => {
 						d.fx = event.x;
 						d.fy = event.y;
-						this.highlightConnectedNodes(d.id);
+						// Don't re-highlight during drag to avoid performance issues
 					})
 					.on("end", (event, d) => {
 						this.isDragging = false;
@@ -488,7 +488,11 @@ export class Graph {
 	handleMouseOut(event: MouseEvent, _d: Node) {
 		this.currentHoveredNode = null;
 		this.clearHoverTimeout();
-		this.clearHighlighting();
+
+		// Don't clear highlighting if we're dragging
+		if (!this.isDragging) {
+			this.clearHighlighting();
+		}
 
 		// Smooth return to original state
 		d3.select(event.currentTarget as SVGCircleElement)
@@ -862,11 +866,14 @@ export class Graph {
 		this.isHighlighting = true;
 
 		const { connectedNodes } = this.getConnectedElements(nodeId);
+		// Always include the hovered node itself in the connected nodes
+		connectedNodes.add(nodeId);
 		this.createOverlay();
 
 		// Enhanced node highlighting with better visual feedback
 		this.nodeSelection
-			?.style("opacity", (d) => {
+			?.interrupt() // Stop any ongoing transitions
+			.style("opacity", (d) => {
 				const isConnected = connectedNodes.has(d.id);
 				return isConnected ? 1 : 0.15; // More contrast
 			})
@@ -889,7 +896,8 @@ export class Graph {
 
 		// Enhanced link highlighting with dynamic colors and thickness
 		this.linkSelection
-			?.style("opacity", (d) => {
+			?.interrupt() // Stop any ongoing transitions
+			.style("opacity", (d) => {
 				const sourceId =
 					typeof d.source === "object"
 						? (d.source as Node).id
@@ -953,7 +961,8 @@ export class Graph {
 
 		// Enhanced label highlighting
 		this.labelSelection
-			?.style("opacity", (d) =>
+			?.interrupt() // Stop any ongoing transitions
+			.style("opacity", (d) =>
 				connectedNodes.has(d.id) ? this.textFade : this.textFade * 0.15
 			)
 			.style("font-weight", (d) =>
@@ -965,7 +974,7 @@ export class Graph {
 			.style("filter", (d) => {
 				const isConnected = connectedNodes.has(d.id);
 				if (isConnected) {
-					// Enhanced text shadow for connected labels
+					// Enhanced text shadow for connected labels (including hovered node)
 					return this.theme === "dark"
 						? "drop-shadow(0 0 4px rgba(255, 255, 255, 0.4))"
 						: "drop-shadow(0 0 4px rgba(0, 0, 0, 0.3))";
@@ -983,7 +992,8 @@ export class Graph {
 
 		// Smooth transition back to normal state
 		this.nodeSelection
-			?.transition()
+			?.interrupt() // Stop any ongoing transitions
+			.transition()
 			.duration(300)
 			.style("opacity", 1)
 			.style(
@@ -995,7 +1005,8 @@ export class Graph {
 			.attr("r", this.nodeSize);
 
 		this.linkSelection
-			?.transition()
+			?.interrupt() // Stop any ongoing transitions
+			.transition()
 			.duration(250)
 			.style("opacity", 0.7)
 			.style("stroke", this.theme === "dark" ? "#334155" : "#cbd5e1")
@@ -1003,7 +1014,8 @@ export class Graph {
 			.style("filter", "none");
 
 		this.labelSelection
-			?.transition()
+			?.interrupt() // Stop any ongoing transitions
+			.transition()
 			.duration(250)
 			.style("opacity", this.textFade)
 			.style("font-weight", "500")

@@ -15,6 +15,7 @@ import { useDashboardStore } from "../../store/dashboardStore";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useNodeStore } from "../../store/nodeStore";
+import { createPortal } from "react-dom";
 
 interface ContentCardProps {
 	content: Content;
@@ -31,30 +32,35 @@ const COLORS = [
 ];
 
 function timeAgo(ts: number) {
+	// Handle invalid timestamps
+	if (!ts || isNaN(ts) || ts <= 0) return "just now";
+
 	// Convert timestamp to milliseconds if it's in seconds
 	const timestamp = ts < 1e12 ? ts * 1000 : ts;
 	const now = Date.now();
 	const diff = Math.floor((now - timestamp) / 1000);
 
-	if (diff < 0) return "now";
+	// Handle invalid calculations
+	if (isNaN(diff) || diff < 0) return "just now";
 	if (diff < 60) return `${diff}s ago`;
 
 	const minutes = Math.floor(diff / 60);
-	if (minutes < 60) return `${minutes}m ago`;
+	if (isNaN(minutes) || minutes < 60) return `${minutes}m ago`;
 
 	const hours = Math.floor(minutes / 60);
-	if (hours < 24) return `${hours}h ago`;
+	if (isNaN(hours) || hours < 24) return `${hours}h ago`;
 
 	const days = Math.floor(hours / 24);
-	if (days < 7) return `${days}d ago`;
+	if (isNaN(days) || days < 7) return `${days}d ago`;
 
 	const weeks = Math.floor(days / 7);
-	if (weeks < 4) return `${weeks}w ago`;
+	if (isNaN(weeks) || weeks < 4) return `${weeks}w ago`;
 
 	const months = Math.floor(days / 30);
-	if (months < 12) return `${months}mo ago`;
+	if (isNaN(months) || months < 12) return `${months}mo ago`;
 
 	const years = Math.floor(days / 365);
+	if (isNaN(years)) return "just now";
 	return `${years}y ago`;
 }
 
@@ -71,12 +77,16 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [hoverThumb, setHoverThumb] = useState(false);
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [showAddChildModal, setShowAddChildModal] = useState(false);
+	const [childId, setChildId] = useState("");
 	const [isFav, setIsFav] = useState(
 		() => content.tags?.includes("favorite") ?? false
 	);
 	const [isHot, setIsHot] = useState(
 		() => content.tags?.includes("hot") ?? false
 	);
+	const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
 	const chosenGradient = useMemo(() => {
 		// pick gradient by color string if provided otherwise first
@@ -85,13 +95,16 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 	}, [content]);
 
 	const handleAddChild = async () => {
-		const id = window.prompt("Add child id:");
-		if (!id) return;
+		if (!childId.trim()) {
+			toast.error("Please enter a valid child ID");
+			return;
+		}
+
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
 			const response = await axios.post(
 				`${backendUrl}/contents/connect-to/${content.id}`,
-				id,
+				childId.trim(),
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem(
@@ -101,27 +114,32 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 				}
 			);
 			if (response.status === 200) {
-				toast.success("Added.");
-				const newChildren = [...content["all-children"], id];
+				toast.success("Child added successfully!");
+				const newChildren = [
+					...content["all-children"],
+					childId.trim(),
+				];
 				updateContent(content.id, { "all-children": newChildren });
 				addLink({
 					source: content.id,
-					target: id,
-					destination: id,
+					target: childId.trim(),
+					destination: childId.trim(),
 					value: Math.floor(Math.random() * 10) + 1,
 				});
 				addNotification({
 					title: "Child added",
-					message: `${id} added`,
+					message: `${childId.trim()} added`,
 					type: "success",
 					read: false,
 				});
+				setShowAddChildModal(false);
+				setChildId("");
 			} else {
-				toast.error("Request failed.");
+				toast.error("Failed to add child");
 			}
 		} catch (error) {
 			console.log(error);
-			toast.error("Request failed.");
+			toast.error("Failed to add child");
 		}
 	};
 
@@ -142,7 +160,6 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 	};
 
 	const handleDelete = async () => {
-		if (!window.confirm("Delete this content?")) return;
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
 			const response = await axios.delete(
@@ -160,19 +177,19 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 				deleteNode(content.id);
 				deleteLinks(content.id);
 				addNotification({
-					title: "Deleted",
-					message: `Deleted content`,
+					title: "Content deleted",
+					message: `Content deleted successfully`,
 					type: "info",
 					read: false,
 				});
-				toast.success("Content deleted");
+				toast.success("Content deleted successfully");
+				setShowDeleteConfirm(false);
 			} else {
-				toast.error("Error while deleting.");
+				toast.error("Failed to delete content");
 			}
 		} catch (error) {
 			console.log(error);
-			toast.error("Error while deleting.");
-		} finally {
+			toast.error("Failed to delete content");
 		}
 	};
 
@@ -338,7 +355,18 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 						>
 							<div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-full" />
 							<Icon
-								onClick={() => setMenuOpen((v) => !v)}
+								onClick={(e?: React.MouseEvent) => {
+									if (e) {
+										const rect = (
+											e.currentTarget as HTMLElement
+										).getBoundingClientRect();
+										setMenuPosition({
+											x: rect.right,
+											y: rect.bottom,
+										});
+									}
+									setMenuOpen((v) => !v);
+								}}
 								ariaLabel="More"
 								className="relative z-10 p-2 rounded-full text-white hover:bg-white/20 transition-all duration-200"
 								size={16}
@@ -346,50 +374,6 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 								<FiMoreVertical />
 							</Icon>
 						</motion.div>
-
-						{menuOpen && (
-							<motion.div
-								initial={{ opacity: 0, y: -10, scale: 0.95 }}
-								animate={{ opacity: 1, y: 0, scale: 1 }}
-								exit={{ opacity: 0, y: -10, scale: 0.95 }}
-								transition={{ duration: 0.15 }}
-								className="absolute right-0 mt-3 w-44 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-sky-200/50 dark:border-sky-700/50 rounded-xl shadow-xl z-50 overflow-hidden"
-							>
-								<motion.button
-									onClick={() => {
-										setMenuOpen(false);
-										handleAddChild();
-									}}
-									className="w-full text-left px-4 py-3 hover:bg-sky-50/80 dark:hover:bg-sky-800/30 flex items-center gap-3 text-sky-700 dark:text-sky-300 font-medium transition-colors duration-150"
-									whileHover={{ x: 4 }}
-								>
-									<FiPlus className="text-emerald-500" />
-									<span>Add child</span>
-								</motion.button>
-								<motion.button
-									onClick={() => {
-										setMenuOpen(false);
-										handleCopyId();
-									}}
-									className="w-full text-left px-4 py-3 hover:bg-sky-50/80 dark:hover:bg-sky-800/30 flex items-center gap-3 text-sky-700 dark:text-sky-300 font-medium transition-colors duration-150"
-									whileHover={{ x: 4 }}
-								>
-									<FiCopy className="text-blue-500" />
-									<span>Copy ID</span>
-								</motion.button>
-								<motion.button
-									onClick={() => {
-										setMenuOpen(false);
-										handleDelete();
-									}}
-									className="w-full text-left px-4 py-3 hover:bg-rose-50/80 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center gap-3 font-medium transition-colors duration-150"
-									whileHover={{ x: 4 }}
-								>
-									<FiTrash2 />
-									<span>Delete</span>
-								</motion.button>
-							</motion.div>
-						)}
 					</div>
 				</div>
 
@@ -570,6 +554,183 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 					</div>
 				</div>
 			</div>
+
+			{/* Add Child Modal */}
+			{showAddChildModal && (
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+					onClick={() => setShowAddChildModal(false)}
+				>
+					<motion.div
+						initial={{ opacity: 0, scale: 0.95, y: 20 }}
+						animate={{ opacity: 1, scale: 1, y: 0 }}
+						exit={{ opacity: 0, scale: 0.95, y: 20 }}
+						className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-md border border-sky-200/50 dark:border-sky-700/50"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="p-6">
+							<h3 className="text-lg font-bold text-sky-900 dark:text-sky-100 mb-4">
+								Add Child Content
+							</h3>
+							<div className="mb-4">
+								<label className="block text-sm font-medium text-sky-700 dark:text-sky-300 mb-2">
+									Child Content ID
+								</label>
+								<input
+									type="text"
+									value={childId}
+									onChange={(e) => setChildId(e.target.value)}
+									placeholder="Enter child content ID"
+									className="w-full px-3 py-2 bg-white/90 dark:bg-gray-800/90 border border-sky-200 dark:border-sky-700 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100"
+									autoFocus
+								/>
+							</div>
+							<div className="flex gap-3">
+								<motion.button
+									onClick={() => {
+										setShowAddChildModal(false);
+										setChildId("");
+									}}
+									className="flex-1 px-4 py-2 text-sm font-medium text-sky-600 dark:text-sky-300 bg-sky-50/80 dark:bg-sky-900/50 border border-sky-200/60 dark:border-sky-700/60 rounded-xl hover:bg-sky-100/80 dark:hover:bg-sky-800/50 transition-all duration-200"
+									whileHover={{ scale: 1.02 }}
+									whileTap={{ scale: 0.98 }}
+								>
+									Cancel
+								</motion.button>
+								<motion.button
+									onClick={handleAddChild}
+									disabled={!childId.trim()}
+									className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl hover:from-sky-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+									whileHover={{ scale: 1.02 }}
+									whileTap={{ scale: 0.98 }}
+								>
+									Add Child
+								</motion.button>
+							</div>
+						</div>
+					</motion.div>
+				</motion.div>
+			)}
+
+			{/* Dropdown Menu Portal */}
+			{menuOpen &&
+				createPortal(
+					<>
+						{/* Backdrop */}
+						<div
+							className="fixed inset-0 z-[9998]"
+							onClick={() => setMenuOpen(false)}
+						/>
+						{/* Menu */}
+						<motion.div
+							initial={{ opacity: 0, y: -10, scale: 0.95 }}
+							animate={{ opacity: 1, y: 0, scale: 1 }}
+							exit={{ opacity: 0, y: -10, scale: 0.95 }}
+							transition={{ duration: 0.15 }}
+							className="fixed w-44 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border border-sky-200/50 dark:border-sky-700/50 rounded-xl shadow-xl z-[9999] overflow-hidden"
+							style={{
+								top: menuPosition.y + 8,
+								left: menuPosition.x - 176, // 44 * 4 = 176px (width of menu)
+							}}
+						>
+							<motion.button
+								onClick={() => {
+									setMenuOpen(false);
+									setShowAddChildModal(true);
+								}}
+								className="w-full text-left px-4 py-3 hover:bg-sky-50/80 dark:hover:bg-sky-800/30 flex items-center gap-3 text-sky-700 dark:text-sky-300 font-medium transition-colors duration-150"
+								whileHover={{ x: 4 }}
+							>
+								<FiPlus className="text-emerald-500" />
+								<span>Add child</span>
+							</motion.button>
+							<motion.button
+								onClick={() => {
+									setMenuOpen(false);
+									handleCopyId();
+								}}
+								className="w-full text-left px-4 py-3 hover:bg-sky-50/80 dark:hover:bg-sky-800/30 flex items-center gap-3 text-sky-700 dark:text-sky-300 font-medium transition-colors duration-150"
+								whileHover={{ x: 4 }}
+							>
+								<FiCopy className="text-blue-500" />
+								<span>Copy ID</span>
+							</motion.button>
+							<motion.button
+								onClick={() => {
+									setMenuOpen(false);
+									setShowDeleteConfirm(true);
+								}}
+								className="w-full text-left px-4 py-3 hover:bg-rose-50/80 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center gap-3 font-medium transition-colors duration-150"
+								whileHover={{ x: 4 }}
+							>
+								<FiTrash2 />
+								<span>Delete</span>
+							</motion.button>
+						</motion.div>
+					</>,
+					document.body
+				)}
+
+			{/* Delete Confirmation Modal */}
+			{showDeleteConfirm && (
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+					onClick={() => setShowDeleteConfirm(false)}
+				>
+					<motion.div
+						initial={{ opacity: 0, scale: 0.95, y: 20 }}
+						animate={{ opacity: 1, scale: 1, y: 0 }}
+						exit={{ opacity: 0, scale: 0.95, y: 20 }}
+						className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-md border border-sky-200/50 dark:border-sky-700/50"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="p-6">
+							<div className="flex items-center gap-4 mb-4">
+								<div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+									<FiTrash2 className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+								</div>
+								<div>
+									<h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+										Delete Content
+									</h3>
+									<p className="text-sm text-gray-600 dark:text-gray-400">
+										This action cannot be undone
+									</p>
+								</div>
+							</div>
+							<p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
+								Are you sure you want to delete this content?
+								This will also remove all associated links and
+								references.
+							</p>
+							<div className="flex gap-3">
+								<motion.button
+									onClick={() => setShowDeleteConfirm(false)}
+									className="flex-1 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-50/80 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-700/60 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-700/50 transition-all duration-200"
+									whileHover={{ scale: 1.02 }}
+									whileTap={{ scale: 0.98 }}
+								>
+									Cancel
+								</motion.button>
+								<motion.button
+									onClick={handleDelete}
+									className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-rose-500 to-red-600 rounded-xl hover:from-rose-600 hover:to-red-700 transition-all duration-200"
+									whileHover={{ scale: 1.02 }}
+									whileTap={{ scale: 0.98 }}
+								>
+									Delete
+								</motion.button>
+							</div>
+						</div>
+					</motion.div>
+				</motion.div>
+			)}
 		</motion.div>
 	);
 }

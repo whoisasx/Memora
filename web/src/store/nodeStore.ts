@@ -42,6 +42,7 @@ export const useNodeStore = create<NodeStore>()(
 			},
 			addLink: (link: Link) => {
 				set((state) => {
+					// Check if link already exists
 					if (
 						state.data.links.some(
 							(l) =>
@@ -51,19 +52,23 @@ export const useNodeStore = create<NodeStore>()(
 					) {
 						return state;
 					}
-					const nodes = [...state.data.nodes];
-					const ensureNode = (id: string) => {
-						if (!nodes.some((n) => n.id === id)) {
-							nodes.push({ id, label: id });
-							state.data.degrees.set(id, { indeg: 0, outdeg: 0 });
-						}
-					};
-					ensureNode(link.source);
-					ensureNode(link.destination);
+
+					// Check if both nodes exist before adding the link
+					const sourceExists = state.data.nodes.some(
+						(n) => n.id === link.source
+					);
+					const destinationExists = state.data.nodes.some(
+						(n) => n.id === link.destination
+					);
+
+					if (!sourceExists || !destinationExists) {
+						// If either node doesn't exist, don't add the link
+						return state;
+					}
 
 					return {
 						data: {
-							nodes,
+							...state.data,
 							links: [...state.data.links, link],
 							degrees: new Map([
 								...state.data.degrees,
@@ -171,7 +176,7 @@ export interface attributeStore {
 export const useAttributeStore = create<attributeStore>()(
 	subscribeWithSelector((set) => ({
 		textFade: 0.0,
-		nodeSize: 1.5,
+		nodeSize: 1.75,
 		lineThickness: 1.0,
 		centerForces: 0.6,
 		repelForces: 10,

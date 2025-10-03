@@ -14,6 +14,7 @@ export default function SearchSection() {
 	const [aiAnswer, setAiAnswer] = useState<string[]>([]); // streaming pieces
 	const [showArrow, setShowArrow] = useState(false);
 	const [hasSearched, setHasSearched] = useState(false);
+	const [isSearching, setIsSearching] = useState(false);
 
 	// show the arrow when the content list is present but not in the viewport
 	useEffect(() => {
@@ -89,6 +90,7 @@ export default function SearchSection() {
 		if (!query.trim()) return;
 		// mark that the user has performed a search with a non-empty query
 		setHasSearched(true);
+		setIsSearching(true);
 		if (!aiMode) {
 			const ids = await findTopN(query);
 			console.log("ids:", ids);
@@ -96,6 +98,7 @@ export default function SearchSection() {
 			setAiResults([]);
 			setAiAnswer([]);
 			setSearchedContents(ids ?? []);
+			setIsSearching(false);
 			return { ids };
 		} else {
 			// abort any previous AI stream
@@ -232,13 +235,16 @@ export default function SearchSection() {
 				}
 
 				// return the ids and assembled answer (use local accumulator)
+				setIsSearching(false);
 				return { ids: finalHits, aiAnswer: accStr };
 			} catch (err: any) {
 				if (err.name === "AbortError") {
 					// aborted by user - ignore
+					setIsSearching(false);
 					return { ids: [] };
 				}
 				console.error("AI search stream failed", err);
+				setIsSearching(false);
 				return { ids: [] };
 			} finally {
 				aiAbortRef.current = null;
@@ -334,17 +340,30 @@ export default function SearchSection() {
 	};
 
 	return (
-		<section className="w-full min-h-screen flex items-center justify-center py-6">
-			<div className="w-full md:w-4/5 flex flex-col items-center">
-				<Searchbar onSearch={handleSearch} />
+		<section className="w-full min-h-screen flex items-center justify-center py-8 px-4 sm:px-6">
+			<div className="w-full max-w-7xl flex flex-col items-center">
+				{/* Enhanced Searchbar Container */}
+				<motion.div
+					className="max-w-7xl w-full"
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.6 }}
+				>
+					<Searchbar onSearch={handleSearch} />
+				</motion.div>
 
-				{/* controls: clear results / abort AI stream */}
-				<div className="w-full flex justify-end mt-3">
-					{(normalResults.length > 0 ||
-						aiResults.length > 0 ||
-						aiAnswer.length > 0) && (
-						<button
-							className="text-sm text-sky-600 dark:text-sky-300 px-3 py-1 border border-sky-200 dark:border-sky-800 rounded-md hover:bg-sky-50 dark:hover:bg-gray-800"
+				{/* Enhanced Controls Section */}
+				{(normalResults.length > 0 ||
+					aiResults.length > 0 ||
+					aiAnswer.length > 0) && (
+					<motion.div
+						className="w-full max-w-3xl flex justify-end mt-6"
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.4, delay: 0.2 }}
+					>
+						<motion.button
+							className="px-4 py-2 text-sm font-medium text-sky-600 dark:text-sky-300 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border border-sky-200/60 dark:border-sky-700/60 rounded-xl shadow-md hover:shadow-lg hover:bg-sky-50/80 dark:hover:bg-gray-800/80 transition-all duration-200"
 							onClick={() => {
 								// abort any running AI request and clear UI
 								if (aiAbortRef.current) {
@@ -356,66 +375,252 @@ export default function SearchSection() {
 								setAiAnswer([]);
 								setSearchedContents([]);
 								setHasSearched(false);
+								setIsSearching(false);
 							}}
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
 						>
-							Clear results
-						</button>
-					)}
-				</div>
+							✨ Clear Results
+						</motion.button>
+					</motion.div>
+				)}
 
-				{/* placeholder spacing so the fixed arrow doesn't overlap */}
-				<div className="h-6" />
+				{/* Enhanced Results Section */}
+				<motion.div
+					className="w-full mt-8 sm:mt-12"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ duration: 0.5, delay: 0.3 }}
+				>
+					{/* Loading State - only show when searching and no AI results yet */}
+					{isSearching &&
+						aiResults.length === 0 &&
+						aiAnswer.length === 0 && (
+							<motion.div
+								className="w-full py-16 sm:py-20 rounded-2xl bg-gradient-to-br from-sky-50/80 to-blue-50/80 dark:from-sky-900/40 dark:to-blue-900/40 border border-sky-200/60 dark:border-sky-700/60 flex flex-col items-center justify-center text-center"
+								initial={{ opacity: 0, scale: 0.95 }}
+								animate={{ opacity: 1, scale: 1 }}
+								transition={{ duration: 0.5 }}
+							>
+								<motion.div
+									className="w-16 h-16 sm:w-20 sm:h-20 mb-6 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg"
+									initial={{ scale: 0 }}
+									animate={{ scale: 1 }}
+									transition={{ delay: 0.2, type: "spring" }}
+								>
+									<motion.div
+										className="w-8 h-8 border-3 border-white border-t-transparent rounded-full"
+										animate={{ rotate: 360 }}
+										transition={{
+											duration: 1,
+											repeat: Infinity,
+											ease: "linear",
+										}}
+									/>
+								</motion.div>
+								<motion.div
+									className="text-lg sm:text-xl font-bold text-sky-900 dark:text-sky-100 mb-3"
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: 0.3 }}
+								>
+									Searching...
+								</motion.div>
+								<motion.div
+									className="max-w-md text-sm sm:text-base text-sky-700 dark:text-sky-300 px-4"
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: 0.4 }}
+								>
+									Finding the best content for you
+								</motion.div>
+							</motion.div>
+						)}
 
-				<div className="mt-6">
-					{/* Normal results (top 5 ids) */}
-					{normalResults.length > 0 ? (
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-							{normalResults.map((id) => {
-								const c = contents.find((x) => x.id === id);
-								if (!c) return null;
-								return <ContentCard key={id} content={c} />;
-							})}
-						</div>
-					) : // only show "No results" after the user has performed a search
-					// and there are no AI results to display
-					hasSearched && aiResults.length === 0 ? (
-						<div className="text-sm text-sky-500">No results</div>
-					) : null}
-
-					{/* AI results + streaming answer */}
-					{aiResults.length > 0 && (
-						<div className="mt-6">
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								{aiResults.map((id) => {
+					{/* Enhanced Normal Results */}
+					{!isSearching && normalResults.length > 0 ? (
+						<motion.div
+							className="w-full"
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5 }}
+						>
+							<motion.h3
+								className="text-xl sm:text-2xl font-bold text-sky-900 dark:text-sky-100 mb-6 text-center"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.1 }}
+							>
+								🔍 Search Results
+							</motion.h3>
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+								{normalResults.map((id, index) => {
 									const c = contents.find((x) => x.id === id);
 									if (!c) return null;
-									return <ContentCard key={id} content={c} />;
+									return (
+										<motion.div
+											key={id}
+											initial={{ opacity: 0, y: 20 }}
+											animate={{ opacity: 1, y: 0 }}
+											transition={{
+												delay: index * 0.1,
+												duration: 0.3,
+											}}
+										>
+											<ContentCard content={c} />
+										</motion.div>
+									);
 								})}
 							</div>
+						</motion.div>
+					) : // Enhanced "No results" state - only show when search is complete
+					!isSearching &&
+					  hasSearched &&
+					  normalResults.length === 0 &&
+					  aiResults.length === 0 ? (
+						<motion.div
+							className="w-full py-16 sm:py-20 rounded-2xl bg-gradient-to-br from-sky-50/80 to-blue-50/80 dark:from-sky-900/40 dark:to-blue-900/40 border-2 border-dashed border-sky-200/60 dark:border-sky-700/60 flex flex-col items-center justify-center text-center shadow-inner"
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							transition={{ duration: 0.5 }}
+						>
+							<motion.div
+								className="w-16 h-16 sm:w-20 sm:h-20 mb-6 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg"
+								initial={{ scale: 0 }}
+								animate={{ scale: 1 }}
+								transition={{ delay: 0.2, type: "spring" }}
+							>
+								<span className="text-2xl sm:text-3xl">🔍</span>
+							</motion.div>
+							<motion.div
+								className="text-lg sm:text-xl font-bold text-sky-900 dark:text-sky-100 mb-3"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.3 }}
+							>
+								No results found
+							</motion.div>
+							<motion.div
+								className="max-w-md text-sm sm:text-base text-sky-700 dark:text-sky-300 px-4"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.4 }}
+							>
+								Try adjusting your search terms or browse your
+								saved content instead.
+							</motion.div>
+						</motion.div>
+					) : null}
 
-							<div className="mt-4 p-4 bg-white/70 dark:bg-gray-900/60 border border-sky-100 dark:border-sky-800 rounded-md">
-								<h4 className="font-semibold mb-2">
-									AI Answer
-								</h4>
-								<div className="prose prose-sm dark:prose-invert">
+					{/* Enhanced AI Results + Streaming Answer - show immediately when AI starts responding */}
+					{(aiResults.length > 0 || aiAnswer.length > 0) && (
+						<motion.div
+							className="w-full mt-8 sm:mt-12"
+							initial={{ opacity: 0, y: 30 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.6 }}
+						>
+							<motion.h3
+								className="text-xl sm:text-2xl font-bold text-sky-900 dark:text-sky-100 mb-6 text-center"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.1 }}
+							>
+								🤖 AI-Powered Results
+							</motion.h3>
+
+							{/* Enhanced AI Answer Box - Moved Above */}
+							<motion.div
+								className="p-6 sm:p-8 bg-gradient-to-br from-white/80 to-sky-50/80 dark:from-gray-900/80 dark:to-sky-900/40 backdrop-blur-sm border border-sky-200/60 dark:border-sky-700/60 rounded-2xl shadow-lg mb-8"
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.2 }}
+							>
+								<motion.div
+									className="flex items-center gap-3 mb-4"
+									initial={{ opacity: 0, x: -10 }}
+									animate={{ opacity: 1, x: 0 }}
+									transition={{ delay: 0.3 }}
+								>
+									<div className="w-8 h-8 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 flex items-center justify-center shadow-md">
+										<span className="text-white text-sm font-bold">
+											AI
+										</span>
+									</div>
+									<h4 className="text-lg sm:text-xl font-bold text-sky-900 dark:text-sky-100">
+										AI Analysis
+									</h4>
+								</motion.div>
+
+								<motion.div
+									className="prose prose-sm sm:prose-base dark:prose-invert max-w-none text-gray-800 dark:text-gray-200"
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									transition={{ delay: 0.4 }}
+								>
 									{aiAnswer.length === 0 ? (
-										<div className="text-sky-500">
-											Waiting for AI response...
-										</div>
+										<motion.div
+											className="flex items-center gap-3 text-sky-600 dark:text-sky-400"
+											initial={{ opacity: 0 }}
+											animate={{ opacity: 1 }}
+										>
+											<motion.div
+												className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full"
+												animate={{ rotate: 360 }}
+												transition={{
+													duration: 1,
+													repeat: Infinity,
+													ease: "linear",
+												}}
+											/>
+											<span className="font-medium">
+												AI is analyzing your content...
+											</span>
+										</motion.div>
 									) : (
 										// render formatted answer (handles lists and paragraphs)
-										renderFormattedAnswer(aiAnswer.join(""))
+										<div className="text-gray-800 dark:text-gray-200">
+											{renderFormattedAnswer(
+												aiAnswer.join("")
+											)}
+										</div>
 									)}
-								</div>
+								</motion.div>
+							</motion.div>
+
+							{/* AI Results Grid - Moved Below */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+								{aiResults.map((id, index) => {
+									const c = contents.find((x) => x.id === id);
+									if (!c) return null;
+									return (
+										<motion.div
+											key={id}
+											initial={{ opacity: 0, y: 20 }}
+											animate={{ opacity: 1, y: 0 }}
+											transition={{
+												delay: index * 0.1,
+												duration: 0.3,
+											}}
+										>
+											<ContentCard content={c} />
+										</motion.div>
+									);
+								})}
 							</div>
-						</div>
+						</motion.div>
 					)}
-				</div>
+				</motion.div>
 			</div>
 
-			{/* fixed bottom-center arrow to scroll to content list — only visible when content is out of view */}
+			{/* Enhanced Fixed Scroll Arrow */}
 			{showArrow && (
-				<div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center">
+				<motion.div
+					className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center"
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					exit={{ opacity: 0, y: 20 }}
+				>
 					<motion.button
 						aria-label="Show results"
 						onClick={() => {
@@ -431,33 +636,40 @@ export default function SearchSection() {
 								});
 							}
 						}}
-						className="p-2 rounded-full bg-white/80 dark:bg-gray-800 shadow-md text-sky-700 dark:text-sky-200"
+						className="p-3 rounded-full bg-gradient-to-br from-white/90 to-sky-50/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm shadow-lg border border-sky-200/50 dark:border-sky-700/50 text-sky-700 dark:text-sky-200 hover:shadow-xl transition-all duration-200"
 						initial={{ y: 0 }}
-						animate={{ y: [0, 6, 0] }}
+						animate={{ y: [0, 8, 0] }}
 						transition={{
 							repeat: Infinity,
-							duration: 1.6,
+							duration: 2,
 							ease: "easeInOut",
 						}}
+						whileHover={{ scale: 1.05 }}
+						whileTap={{ scale: 0.95 }}
 					>
 						<svg
 							className="w-6 h-6"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
+							strokeWidth="2"
 						>
 							<path
-								strokeWidth="2"
 								strokeLinecap="round"
 								strokeLinejoin="round"
 								d="M19 9l-7 7-7-7"
 							/>
 						</svg>
 					</motion.button>
-					<div className="text-xs text-sky-600 dark:text-sky-200 mt-1">
-						Scroll down to see content
-					</div>
-				</div>
+					<motion.div
+						className="text-xs font-medium text-sky-600 dark:text-sky-300 mt-2 px-3 py-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-sky-200/50 dark:border-sky-700/50 shadow-md"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ delay: 0.2 }}
+					>
+						📄 View contents
+					</motion.div>
+				</motion.div>
 			)}
 		</section>
 	);

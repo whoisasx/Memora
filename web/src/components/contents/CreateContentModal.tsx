@@ -169,6 +169,7 @@ export default function CreateContentModal() {
 	const createModelOpen = useDashboardStore((s) => s.createModelOpen);
 	const setCreateModelOpen = useDashboardStore((s) => s.setCreateModelOpen);
 	const addContent = useDashboardStore((s) => s.addContent);
+	const addNotification = useDashboardStore((s) => s.addNotification);
 	const { addNode } = useNodeStore();
 
 	type FormData = {
@@ -273,6 +274,9 @@ export default function CreateContentModal() {
 		e.preventDefault();
 		if (!formData.url.trim()) return toast.error("Please enter a URL");
 
+		// Close modal immediately when user clicks submit
+		handleClose();
+
 		try {
 			// validate/parse URL
 			toast("Adding Content.");
@@ -328,6 +332,12 @@ export default function CreateContentModal() {
 					const content = { ...responseData.content! };
 					addContent(content);
 					addNode(content.id);
+					addNotification({
+						title: "Content added",
+						message: `${content.id} added`,
+						type: "success",
+						read: false,
+					});
 					toast.success("Content added");
 				} else {
 					toast.error("Error adding content");
@@ -339,8 +349,6 @@ export default function CreateContentModal() {
 		} catch (err) {
 			console.error(err);
 			toast.error("Error adding content");
-		} finally {
-			handleClose();
 		}
 	};
 
