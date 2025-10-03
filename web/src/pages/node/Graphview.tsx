@@ -11,6 +11,7 @@ import Icon from "../../ui/Icon";
 import { RiResetLeftFill } from "react-icons/ri";
 import { ThemeButton } from "../../components/dashboard/NavBar";
 import { LuSettings2 } from "react-icons/lu";
+import { AiOutlineClose } from "react-icons/ai";
 
 export default function Graphview() {
 	const { setContents } = useDashboardStore();
@@ -137,12 +138,21 @@ export default function Graphview() {
 					>
 						<RiResetLeftFill />
 					</Icon>
-					<Icon
-						className="size-8"
-						onClick={() => setActiveOptions((prev) => !prev)}
-					>
-						<LuSettings2 />
-					</Icon>
+					{activeOptions ? (
+						<Icon
+							className="size-8"
+							onClick={() => setActiveOptions(false)}
+						>
+							<AiOutlineClose />
+						</Icon>
+					) : (
+						<Icon
+							className="size-8"
+							onClick={() => setActiveOptions((prev) => !prev)}
+						>
+							<LuSettings2 />
+						</Icon>
+					)}
 				</div>
 
 				<ThemeButton className="!w-8 !h-8" />

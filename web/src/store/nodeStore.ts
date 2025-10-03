@@ -187,3 +187,14 @@ export const useAttributeStore = create<attributeStore>()(
 		setLinkDistance: (distance) => set({ linkDistance: distance }),
 	}))
 );
+
+export interface animatedStore {
+	hasanimated: boolean;
+	setHasanimated: (animate: boolean) => void;
+}
+export const useAnimatedStore = create<animatedStore>()(
+	subscribeWithSelector((set) => ({
+		hasanimated: false,
+		setHasanimated: (animate: boolean) => set({ hasanimated: animate }),
+	}))
+);

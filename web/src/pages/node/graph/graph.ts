@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import {
+	useAnimatedStore,
 	useAttributeStore,
 	type Link,
 	type Node,
@@ -21,8 +22,8 @@ export class Graph {
 	private theme: "dark" | "light" = useThemeStore.getState().theme;
 
 	private textFade: number =
-		(3 - useAttributeStore.getState().textFade) * 16.2;
-	private nodeSize: number = useAttributeStore.getState().nodeSize * 5;
+		(1 - useAttributeStore.getState().textFade) * 100;
+	private nodeSize: number = useAttributeStore.getState().nodeSize * 4;
 	private lineThickness: number =
 		useAttributeStore.getState().lineThickness * 1.25;
 	private centerForces: number = useAttributeStore.getState().centerForces;
@@ -40,6 +41,9 @@ export class Graph {
 	private currentHoveredNode: string | null = null;
 	private isHighlighting: boolean = false;
 	private overlayEl: HTMLDivElement | null = null;
+	private hasAnimated: boolean = useAnimatedStore.getState().hasanimated;
+	private setHasAnimeted: (animate: boolean) => void =
+		useAnimatedStore.getState().setHasanimated;
 
 	private unsubscribeTextFade: () => void;
 	private unsubscribeNodeSize: () => void;
@@ -48,6 +52,7 @@ export class Graph {
 	private unsubscribeRepelForces: () => void;
 	private unsubscribeLinkForces: () => void;
 	private unsubscribeLinkDistance: () => void;
+	private unsubscribeHasAnimated: () => void;
 
 	private unsubscribeTheme: () => void;
 
@@ -72,7 +77,7 @@ export class Graph {
 		this.unsubscribeTextFade = useAttributeStore.subscribe(
 			(state) => state.textFade,
 			(newVal) => {
-				this.textFade = (3 - newVal) * 16.2;
+				this.textFade = (1 - newVal) * 100;
 				if (this.labelSelection) {
 					this.labelSelection.attr("opacity", this.textFade);
 				}
@@ -81,7 +86,7 @@ export class Graph {
 		this.unsubscribeNodeSize = useAttributeStore.subscribe(
 			(state) => state.nodeSize,
 			(newVal) => {
-				this.nodeSize = newVal * 5;
+				this.nodeSize = newVal * 4;
 				if (this.nodeSelection) {
 					this.nodeSelection.attr("r", this.nodeSize);
 				}
@@ -138,6 +143,16 @@ export class Graph {
 			}
 		);
 
+		this.unsubscribeHasAnimated = useAnimatedStore.subscribe(
+			(state) => state.hasanimated,
+			(newVal) => {
+				this.hasAnimated = newVal;
+				if (newVal === false) {
+					this.drawGraph();
+				}
+			}
+		);
+
 		this.drawGraph();
 	}
 
@@ -151,6 +166,7 @@ export class Graph {
 		this.unsubscribeLinkDistance();
 
 		this.unsubscribeTheme();
+		this.unsubscribeHasAnimated();
 
 		// Clear any pending timeouts
 		if (this.hoverTimeout) {
@@ -253,9 +269,10 @@ export class Graph {
 			.selectAll<SVGCircleElement, Node>("circle")
 			.data(this.nodes)
 			.join("circle")
-			.attr("r", this.nodeSize)
+			.attr("r", 0)
 			.attr("fill", (d) => this.getNodeColor(d.id))
 			.style("cursor", "pointer")
+			.style("opacity", 0)
 			.call(
 				d3
 					.drag<SVGCircleElement, Node>()
@@ -318,7 +335,13 @@ export class Graph {
 			})
 			.attr("font-size", 12)
 			.attr("dy", -15)
-			.attr("opacity", this.textFade);
+			.attr("opacity", 0);
+		if (!this.hasAnimated) {
+			this.animateEntrance();
+		} else {
+			this.nodeSelection.attr("r", this.nodeSize).style("opacity", 1);
+			this.labelSelection.attr("opacity", this.textFade);
+		}
 
 		simulation.on("tick", () => {
 			this.linkSelection!.attr("x1", (d) =>
@@ -668,5 +691,32 @@ export class Graph {
 			this.overlayEl.parentElement.removeChild(this.overlayEl);
 			this.overlayEl = null;
 		}
+	}
+
+	private animateEntrance() {
+		this.setHasAnimeted(true);
+		this.linkSelection
+			?.style("opacity", 0)
+			.transition()
+			.duration(2500)
+			.delay((_d, i) => i * 100)
+			.ease(d3.easeElasticOut.amplitude(1.5).period(0.5))
+			.style("opacity", 1);
+
+		this.nodeSelection
+			?.transition()
+			.duration(2500)
+			.delay((_d, i) => i * 100)
+			.ease(d3.easeElasticOut.amplitude(1.4).period(0.4))
+			.attr("r", this.nodeSize)
+			.style("opacity", 1);
+
+		this.labelSelection
+			?.style("opacity", 0)
+			.transition()
+			.duration(2000)
+			.delay((_d, i) => i * 100 + 300)
+			.ease(d3.easeBackOut.overshoot(1.7))
+			.style("opacity", this.textFade);
 	}
 }
