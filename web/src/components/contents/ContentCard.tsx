@@ -31,7 +31,7 @@ const COLORS = [
 ];
 
 function timeAgo(ts: number) {
-	console.log(ts);
+	// console.log(ts);
 	const s = Math.floor((Date.now() - ts) / 1000);
 	if (s < 60) return `${s}s`;
 	const m = Math.floor(s / 60);
@@ -90,6 +90,7 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 				updateContent(content.id, { "all-children": newChildren });
 				addLink({
 					source: content.id,
+					target: id,
 					destination: id,
 					value: Math.floor(Math.random() * 10) + 1,
 				});
