@@ -104,24 +104,90 @@ export default function Navbar() {
 
 				{/* Center Actions (Hidden on small screens) */}
 				<div className="hidden md:flex items-center gap-4">
-					<Button
-						size="medium"
-						level="primary"
-						onClick={() => navigate("/nodes")}
-						className="group shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+					{/* Premium CTA Button */}
+					<motion.div
+						whileHover={{ scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						className="relative group"
 					>
-						<div className="flex gap-2 items-center font-semibold">
-							<span className="text-sm lg:text-base">
-								Let's Node
-							</span>
-							<Icon
-								size={18}
-								className="text-white group-hover:rotate-12 transition-transform duration-200"
-							>
-								<PiGraphDuotone />
-							</Icon>
+						{/* Glow effect background */}
+						<div className="absolute -inset-1 bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
+
+						<Button
+							size="medium"
+							level="primary"
+							onClick={() => navigate("/nodes")}
+							className="relative group shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-600 hover:via-blue-700 hover:to-indigo-700 border-0"
+						>
+							<div className="flex gap-2 items-center font-bold">
+								{/* Premium badge
+								<div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 bg-white/20 rounded-full text-xs font-medium text-white/90">
+									<motion.div
+										animate={{ scale: [1, 1.2, 1] }}
+										transition={{
+											duration: 2,
+											repeat: Infinity,
+										}}
+										className="w-1.5 h-1.5 bg-yellow-300 rounded-full"
+									/>
+									N
+								</div> */}
+
+								<span className="text-sm lg:text-base bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+									Explore Nodes
+								</span>
+
+								<motion.div
+									whileHover={{ rotate: 12, scale: 1.1 }}
+									transition={{ duration: 0.2 }}
+								>
+									<Icon
+										size={18}
+										className="text-white drop-shadow-sm"
+									>
+										<PiGraphDuotone />
+									</Icon>
+								</motion.div>
+							</div>
+
+							{/* Shimmer effect on hover */}
+							<div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+								<motion.div
+									className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
+									whileHover={{ x: "200%" }}
+									transition={{
+										duration: 0.6,
+										ease: "easeOut",
+									}}
+								/>
+							</div>
+						</Button>
+					</motion.div>
+
+					{/* Value proposition tooltip */}
+					<motion.div
+						initial={{ opacity: 0, scale: 0.8 }}
+						animate={{ opacity: 1, scale: 1 }}
+						transition={{ delay: 1, duration: 0.3 }}
+						className="hidden xl:block relative"
+					>
+						<div className="px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border border-emerald-200/50 dark:border-emerald-700/50 rounded-full">
+							<div className="flex items-center gap-2">
+								<motion.div
+									animate={{ rotate: 360 }}
+									transition={{
+										duration: 8,
+										repeat: Infinity,
+										ease: "linear",
+									}}
+									className="w-2 h-2 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full"
+								/>
+								<span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+									Visualize connections
+								</span>
+							</div>
 						</div>
-					</Button>
+					</motion.div>
 				</div>
 
 				{/* Right Actions */}
