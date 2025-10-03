@@ -14,18 +14,31 @@ export default function Signin() {
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		const accessToken = localStorage.getItem("access-token");
-		const userString = localStorage.getItem("user");
-		if (accessToken && userString) {
-			setUser(JSON.parse(userString));
-			navigate("/dashboard");
+		// Don't auto-redirect if we're coming from Google OAuth callback
+		const urlParams = new URLSearchParams(window.location.search);
+		const isGoogleCallback =
+			urlParams.has("code") ||
+			urlParams.has("state") ||
+			window.location.pathname.includes("callback");
+
+		if (!isGoogleCallback) {
+			const accessToken = localStorage.getItem("access-token");
+			const userString = localStorage.getItem("user");
+			if (accessToken && userString) {
+				setUser(JSON.parse(userString));
+				navigate("/dashboard");
+			}
 		}
 	}, []);
 
 	const handleSignIn = async (e: FormEvent) => {
 		e.preventDefault();
-		setUsername("");
-		setPassword("");
+
+		if (!username || !email || !password) {
+			toast.error("Please fill in all fields");
+			return;
+		}
+
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
 			const response = await axios.post(`${backendUrl}/auth/signin`, {
@@ -52,6 +65,9 @@ export default function Signin() {
 			console.error("error while signing: ", error);
 			toast.error("Please try again.");
 		} finally {
+			setUsername("");
+			setEmail("");
+			setPassword("");
 		}
 	};
 
@@ -65,26 +81,40 @@ export default function Signin() {
 		<div className="min-h-screen min-w-screen dark:bg-slate-dark-1 bg-slate-8 text-slate-dark-1 dark:text-slate-1">
 			<div>
 				<div>
-					<form onSubmit={handleSignIn}>
+					<form id="signin-form" onSubmit={handleSignIn}>
 						<input
 							type="text"
+							name="username"
 							placeholder="username"
 							className="m-5 h-10 px-3"
 							onChange={(e) => setUsername(e.target.value)}
+							id="username"
+							autoComplete="off"
+							value={username}
 						/>
 						<input
 							type="email"
+							name="email"
 							placeholder="email"
 							className="m-5 h-10 px-3"
 							onChange={(e) => setEmail(e.target.value)}
+							id="email"
+							autoComplete="off"
+							value={email}
 						/>
 						<input
 							type="password"
+							name="password"
 							placeholder="your password"
 							className="m-5 h-10 px-3"
 							onChange={(e) => setPassword(e.target.value)}
+							id="password"
+							autoComplete="off"
+							value={password}
 						/>
-						<button type="submit">sign in</button>
+						<button type="submit" id="submit-button">
+							sign in
+						</button>
 					</form>
 				</div>
 				<div>

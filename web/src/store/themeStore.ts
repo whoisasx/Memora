@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 
 interface themeStore {
 	theme: "light" | "dark";
@@ -26,13 +27,15 @@ function getInitialTheme(): "dark" | "light" {
 	return theme;
 }
 
-export const useThemeStore = create<themeStore>()((set) => ({
-	theme: getInitialTheme(),
-	setTheme: (val) => {
-		localStorage.setItem("theme", val);
-		document.documentElement.classList.toggle("dark", val === "dark");
-		set(() => ({
-			theme: val,
-		}));
-	},
-}));
+export const useThemeStore = create<themeStore>()(
+	subscribeWithSelector((set) => ({
+		theme: getInitialTheme(),
+		setTheme: (val) => {
+			localStorage.setItem("theme", val);
+			document.documentElement.classList.toggle("dark", val === "dark");
+			set(() => ({
+				theme: val,
+			}));
+		},
+	}))
+);

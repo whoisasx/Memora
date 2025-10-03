@@ -10,16 +10,23 @@ export default function Callback() {
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
-		console.log(params);
+		console.log("OAuth callback params:", params);
 		const token = params.get("token");
 		const username = params.get("username");
 		const email = params.get("email");
 		const fullname = params.get("fullname");
+		const error = params.get("error");
 
-		if (token) {
+		if (error) {
+			console.error("OAuth error:", error);
+			navigate("/signin");
+			return;
+		}
+
+		if (token && username) {
 			localStorage.setItem("access-token", token);
 			const user: User = {
-				username: username!,
+				username: username,
 				email: email ?? undefined,
 				fullname: fullname ?? undefined,
 				authenticated: true,
@@ -28,10 +35,12 @@ export default function Callback() {
 			localStorage.setItem("user", JSON.stringify(user));
 			navigate("/dashboard");
 		} else {
-			if (localStorage.getItem("access-token")) navigate("/dashboard");
-			else navigate("/");
+			console.log(
+				"Missing required OAuth parameters, redirecting to signin"
+			);
+			navigate("/signin");
 		}
-	}, [navigate]);
+	}, [navigate, setUser]);
 
 	return <div>Signing you in...</div>;
 }

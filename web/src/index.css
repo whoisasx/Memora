@@ -1,10 +1,18 @@
 @import url("https://fonts.googleapis.com/css2?family=Alan+Sans:wght@300..900&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 @import "tailwindcss";
 
+.dashboard {
+	background-color: #f9fafb; /* base color */
+	background-image: linear-gradient(to right, #d1d5db 1px, transparent 1px),
+		linear-gradient(to bottom, #d1d5db 1px, transparent 1px);
+	background-size: 200px 200px; /* 50px x 50px grid */
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 @theme {
 	--font-alansans: "Alan Sans", sans-serif;
 	--font-firacode: "Fira Code", sans-serif;
+	--color-dark-dashboard: #0f0f0f;
 	/* Light theme colors */
 	--color-ruby-1: #fffcfd;
 	--color-ruby-2: #fff7f8;
@@ -58,4 +66,26 @@
 	--color-slate-dark-10: #777b84;
 	--color-slate-dark-11: #b0b4ba;
 	--color-slate-dark-12: #edeef0;
+}
+
+@layer utilities {
+	.range {
+		@apply cursor-pointer appearance-none bg-transparent;
+	}
+	/* WebKit browsers (Chrome, Safari, Edge) */
+	.range::-webkit-slider-runnable-track {
+		@apply h-[2px] rounded-full bg-gray-200;
+	}
+	.range::-webkit-slider-thumb {
+		@apply h-4 w-4 rounded-full bg-blue-500;
+		-webkit-appearance: none;
+		margin-top: -8px; /* center align thumb on track */
+	}
+	/* Firefox */
+	.range::-moz-range-track {
+		@apply h-[2px] rounded-full bg-gray-200;
+	}
+	.range::-moz-range-thumb {
+		@apply h-4 w-4 rounded-full bg-blue-500 border-0;
+	}
 }

@@ -9,10 +9,10 @@ interface DashBoardStore {
 	updateContent: (id: string, updates: Partial<Content>) => void;
 	deleteContent: (id: string) => void;
 
-	children: string[];
-	setChildren: (children: string[]) => void;
-	addChild: (child: string) => void;
-	deleteChild: (child: string) => void;
+	// children: string[];
+	// setChildren: (children: string[]) => void;
+	// addChild: (child: string) => void;
+	// deleteChild: (child: string) => void;
 
 	selectedFilter: "all" | "favorits" | "recent" | "trash" | "hot";
 	setSelectedFilter: (
@@ -76,16 +76,16 @@ export const useDashboardStore = create<DashBoardStore>()(
 					),
 				})),
 
-			children: [],
-			setChildren: (children: string[]) => set({ children }),
-			addChild: (child: string) =>
-				set((state: { children: string[] }) => ({
-					children: [...state.children, child],
-				})),
-			deleteChild: (child: string) =>
-				set((state: { children: string[] }) => ({
-					children: state.children.filter((c: string) => c !== child),
-				})),
+			// children: [],
+			// setChildren: (children: string[]) => set({ children }),
+			// addChild: (child: string) =>
+			// 	set((state: { children: string[] }) => ({
+			// 		children: [...state.children, child],
+			// 	})),
+			// deleteChild: (child: string) =>
+			// 	set((state: { children: string[] }) => ({
+			// 		children: state.children.filter((c: string) => c !== child),
+			// 	})),
 
 			selectedFilter: "all",
 			setSelectedFilter: (
@@ -149,6 +149,14 @@ export const useDashboardStore = create<DashBoardStore>()(
 		}),
 		{
 			name: "dashboard-storage",
+			// persist only essential data; avoid storing ephemeral UI state
+			partialize: (state) => ({
+				contents: state.contents,
+				// children: state.children,
+				selectedFilter: state.selectedFilter,
+				viewMode: state.viewMode,
+				notifications: state.notifications,
+			}),
 		}
 	)
 );

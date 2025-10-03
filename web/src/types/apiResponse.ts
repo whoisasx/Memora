@@ -19,6 +19,7 @@ export interface Content {
 	timestamp: number;
 	tags: string[];
 	url_data: UrlData;
+	"all-children": string[];
 }
 export interface Tag {
 	id: string;
