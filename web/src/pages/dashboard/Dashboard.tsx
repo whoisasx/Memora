@@ -110,8 +110,8 @@ export default function Dashboard() {
 	}, [navigate, setContents, clear, addNode, addLink]);
 
 	return (
-		<div className="relative min-w-screen min-h-screen dark:bg-dark-dashboard">
-			{/* <Background /> */}
+		<div className="relative min-w-screen min-h-screen bg-gradient-to-br from-sky-100 via-slate-100 to-sky-150 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+			<Background />
 			<Navbar />
 			<main className="relative z-10 px-20 py-10 font-firacode scroll-none">
 				<SearchSection />

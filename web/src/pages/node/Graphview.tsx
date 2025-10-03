@@ -256,7 +256,7 @@ export default function Graphview() {
 					ref={svgRef}
 					height={dimensions.height}
 					width={dimensions.width}
-					className="relative z-20"
+					className="relative z-20 cursor-grab"
 					style={{
 						filter: "drop-shadow(0 0 20px rgba(14, 165, 233, 0.1))",
 					}}

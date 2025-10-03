@@ -45,6 +45,11 @@ export class Graph {
 	private setHasAnimeted: (animate: boolean) => void =
 		useAnimatedStore.getState().setHasanimated;
 
+	// SVG panning properties
+	private zoom: d3.ZoomBehavior<SVGSVGElement, unknown> | null = null;
+	private g: d3.Selection<SVGGElement, unknown, null, undefined> | null =
+		null;
+
 	private unsubscribeTextFade: () => void;
 	private unsubscribeNodeSize: () => void;
 	private unsubscribeLineThickness: () => void;
@@ -195,6 +200,12 @@ export class Graph {
 		// Update SVG dimensions
 		this.svg.attr("width", width).attr("height", height);
 
+		// Reset pan position when dimensions change to keep graph centered
+		if (this.zoom && this.g) {
+			const transform = d3.zoomIdentity;
+			this.svg.call(this.zoom.transform, transform);
+		}
+
 		// Scale existing node positions to maintain relative positioning
 		if (this.nodeSelection && oldWidth > 0 && oldHeight > 0) {
 			const scaleX = width / oldWidth;
@@ -253,6 +264,23 @@ export class Graph {
 	drawGraph() {
 		this.svg.selectAll("*").remove();
 
+		// Create a group element for all graph content that can be transformed
+		this.g = this.svg.append("g").attr("class", "graph-container");
+
+		// Set up zoom and pan behavior for the graph
+		this.zoom = d3
+			.zoom<SVGSVGElement, unknown>()
+			.scaleExtent([0.1, 4]) // Allow zoom from 10% to 400%
+			.on("zoom", (event) => {
+				if (this.g) {
+					// Apply both translation and scaling
+					this.g.attr("transform", event.transform);
+				}
+			});
+
+		// Apply zoom and pan behavior to SVG
+		this.svg.call(this.zoom).on("dblclick.zoom", null); // Disable double-click zoom to avoid conflicts with node interactions
+
 		const simulation = d3
 			.forceSimulation(this.nodes)
 			.force(
@@ -279,7 +307,7 @@ export class Graph {
 			);
 
 		// Enhanced link styling with better colors and gradients
-		this.linkSelection = this.svg
+		this.linkSelection = this.g
 			.append("g")
 			.selectAll("line")
 			.data(this.links)
@@ -291,7 +319,7 @@ export class Graph {
 			.style("filter", "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))"); // Subtle shadow
 
 		// Enhanced node styling with gradients and better shadows
-		this.nodeSelection = this.svg
+		this.nodeSelection = this.g
 			.append("g")
 			.selectAll<SVGCircleElement, Node>("circle")
 			.data(this.nodes)
@@ -345,7 +373,7 @@ export class Graph {
 			});
 
 		// Enhanced label styling with better typography and contrast
-		this.labelSelection = this.svg
+		this.labelSelection = this.g
 			.append("g")
 			.selectAll("text")
 			.data(this.nodes)
