@@ -12,6 +12,7 @@ import { RiResetLeftFill } from "react-icons/ri";
 import { ThemeButton } from "../../components/dashboard/NavBar";
 import { LuSettings2 } from "react-icons/lu";
 import { AiOutlineClose } from "react-icons/ai";
+import AnimatedBackground from "../../components/background/AnimatedBackground";
 
 export default function Graphview() {
 	const { setContents } = useDashboardStore();
@@ -121,8 +122,9 @@ export default function Graphview() {
 	}, [svgRef.current, data]);
 
 	return (
-		<div className="w-screen h-screen relative">
-			<div className="flex h-10 w-40 md:w-60 px-2 justify-between py-2 border rounded-xl items-center absolute top-2 right-2">
+		<div className="w-screen h-screen relative bg-gradient-to-br from-sky-50 to-sky-100 dark:from-slate-900 dark:to-slate-800">
+			<AnimatedBackground />
+			<div className="flex h-10 w-40 md:w-60 px-2 justify-between py-2 border border-sky-200 dark:border-sky-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl items-center absolute top-2 right-2 shadow-lg shadow-sky-500/20 dark:shadow-sky-400/10 z-50">
 				<div className="flex h-full gap-2 items-center">
 					<Icon
 						onClick={() => {
@@ -134,20 +136,20 @@ export default function Graphview() {
 							attributeStore.setLinkForces(1.0);
 							attributeStore.setLinkDistance(250);
 						}}
-						className="size-8"
+						className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
 					>
 						<RiResetLeftFill />
 					</Icon>
 					{activeOptions ? (
 						<Icon
-							className="size-8"
+							className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
 							onClick={() => setActiveOptions(false)}
 						>
 							<AiOutlineClose />
 						</Icon>
 					) : (
 						<Icon
-							className="size-8"
+							className="size-8 text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
 							onClick={() => setActiveOptions((prev) => !prev)}
 						>
 							<LuSettings2 />
@@ -158,25 +160,11 @@ export default function Graphview() {
 				<ThemeButton className="!w-8 !h-8" />
 			</div>
 			{activeOptions && <GraphOptions />}
-			<svg width="100%" height="100%" className="absolute inset-0 -z-50">
-				<defs>
-					<pattern
-						id="dots"
-						x="0"
-						y="0"
-						width="50"
-						height="50"
-						patternUnits="userSpaceOnUse"
-					>
-						<circle cx="2" cy="2" r="1" fill="gray" />
-					</pattern>
-				</defs>
-				<rect width="100%" height="100%" fill="url(#dots)" />
-			</svg>
 			<svg
 				ref={svgRef}
 				height={window.innerHeight}
 				width={window.innerWidth}
+				className="relative z-20"
 			></svg>
 		</div>
 	);

@@ -5,7 +5,7 @@ export default function GraphOptions() {
 	const attributeStore = useAttributeStore();
 	const setHasAnimated = useAnimatedStore((state) => state.setHasanimated);
 	return (
-		<div className="border w-40 md:w-60 px-3 py-3 absolute top-13 right-2 flex flex-col gap-2 rounded-xl">
+		<div className="border border-sky-200 dark:border-sky-700 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm w-40 md:w-60 px-3 py-3 absolute top-13 right-2 flex flex-col gap-2 rounded-xl shadow-lg shadow-sky-500/20 dark:shadow-sky-400/10">
 			<div className="flex flex-col gap-2 mb-2">
 				<p className="font-semibold text-base">Display</p>
 				<Slider
