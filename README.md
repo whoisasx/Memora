@@ -2,7 +2,7 @@
 
 **Your second brain: tag, connect, visualize, and chat with your knowledge.**
 
-![Memora Hero](web/public/hero-light.png)
+![Memora Hero](web/public/hero-dark.png)
 
 Memora is an intelligent knowledge management system that helps you think better by organizing, connecting, and visualizing your ideas. With AI-powered search and beautiful graph visualizations, Memora transforms how you capture and interact with your knowledge.
 
