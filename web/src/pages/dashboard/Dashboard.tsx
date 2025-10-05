@@ -16,6 +16,15 @@ export default function Dashboard() {
 	const { clear, addNode, addLink } = useNodeStore();
 	const navigate = useNavigate();
 
+	// Set document title for browser tab
+	useEffect(() => {
+		document.title = "Dashboard | Memora - Your Second Brain";
+		return () => {
+			document.title =
+				"Memora | your second brain: tag, connect, visualize, and chat with your knowledge.";
+		};
+	}, []);
+
 	useEffect(() => {
 		const accessToken = localStorage.getItem("access-token");
 		const userString = localStorage.getItem("user");

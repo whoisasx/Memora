@@ -7,6 +7,7 @@ import Signup from "./pages/auth/Signup";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Graphview from "./pages/node/Graphview";
 import Callback from "./pages/auth/AuthCallback";
+import NotFound from "./pages/NotFound";
 
 function App() {
 	return (
@@ -23,6 +24,7 @@ function App() {
 				<Route path="auth">
 					<Route path="callback" element={<Callback />} />
 				</Route>
+				<Route path="*" element={<NotFound />} />
 			</Routes>
 		</div>
 	);

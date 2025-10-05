@@ -123,4 +123,9 @@
 		transform: scale(1.1);
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 	}
+
+	/* Custom gradient utilities */
+	.bg-gradient-radial {
+		background: radial-gradient(circle, var(--tw-gradient-stops));
+	}
 }

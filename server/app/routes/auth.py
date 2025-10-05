@@ -179,3 +179,30 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         frontend_url = os.getenv("FRONTEND_URL")
         redirect_url=f"{frontend_url}/signin"
         return RedirectResponse(url=redirect_url)
+
+
+@router.get('/validate', status_code=status.HTTP_200_OK)
+def validate_user(request: Request, token: Optional[str] = Query(None)):
+    # Prefer Authorization header
+    auth_header = request.headers.get('Authorization')
+    raw_token = None
+    if auth_header and auth_header.lower().startswith('bearer '):
+        raw_token = auth_header.split(' ', 1)[1].strip()
+    elif token:
+        raw_token = token
+
+    if not raw_token:
+        raise HTTPException(status_code=401, detail='Authorization token not provided')
+
+    try:
+        payload = auth_utils.decode_access_token(raw_token)
+        # Minimal response — caller can decide whether to allow access based on 200
+        return {
+            'valid': True,
+            'payload': payload,
+            'message': 'token is valid',
+            'success': True
+        }
+    except Exception:
+        # token decode errors, expired tokens, etc. - return a generic message
+        raise HTTPException(status_code=401, detail='Invalid or expired token')

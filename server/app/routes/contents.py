@@ -55,7 +55,7 @@ def add_content(content:Annotated[ContentBase,Body()], req:Request, db:Session=D
             thumbnail=url_content.thumbnail,
             site_name=url_content.site_name,
             color=content.color,
-            timestamp=content.timestamp,
+            timestamp=int(content.timestamp / 1000) if content.timestamp else None,
             tags=content.tags,
             username=username
         )
@@ -101,7 +101,7 @@ def add_content(content:Annotated[ContentBase,Body()], req:Request, db:Session=D
             "url":db_content.url,
             "description":db_content.description,
             "color":db_content.color,
-            "timestame":db_content.timestamp,
+            "timestame":content.timestamp,
             "tags":db_content.tags,
             "url_data":{
                 "domain":db_content.domain,
@@ -130,7 +130,8 @@ def get_contents(username:Annotated[str,Query()], req:Request, db:Session=Depend
                     "favicon":c.favicon,
                     "thumbnail":c.thumbnail,
                     "site_name":c.site_name,
-                }
+                },
+                "all-children":c.children_ids,
             }
             for c in db.query(Content).filter(Content.username==username).all()
         ]
@@ -203,6 +204,20 @@ def delete_content(content_id: Annotated[str,Path()], db:Session=Depends(get_db)
         if content is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="content is not in database.")
         
+        parents = db.query(Content).filter(Content.children_ids.any(content_id)).all()
+        for parent in parents:
+            # remove all occurrences of content_id from children_ids (handle None)
+            children_ids_value = parent.children_ids
+            if isinstance(children_ids_value, list):
+                original_children = children_ids_value
+            else:
+                original_children = []
+            filtered = [cid for cid in original_children if str(cid) != str(content_id)]
+            if filtered != original_children:
+                # Ensure assignment is to a plain list, not a SQLAlchemy column/expression
+                setattr(parent, "children_ids", filtered)
+                db.add(parent)
+
         es_index = f"{index_name if index_name else 'memora'}"
         try:
             es_client.delete(index=es_index, id=content_id)
@@ -387,13 +402,14 @@ def search_content(search_content:Annotated[SearchContent,Body()]):
         try:
             input_embedding = url_utils.get_text_embeddings(search_content.input)
             query = {
-                "size": 3,
+                "size": 2,
                 "knn": {
                     "field": "embeddings.vector",  
                     "query_vector": input_embedding, 
                     "k": 3,
                     "num_candidates": 10
-                }
+                },
+                "min_score": 0.8 
             }
             response = es_client.search(index=f"{index_name if index_name else 'memora'}", body=query)
             hits = response.get('hits', {}).get('hits', [])
@@ -422,6 +438,7 @@ You are a helpful and knowledgeable AI assistant. Your goal is to provide the mo
     - For information from the context, you can phrase it like: "According to the provided documents..."
     - For information from your own knowledge, you MUST state: "From my general knowledge..." or "Additionally, from my general knowledge..."
 5. Combine the information from both sources into a natural, easy-to-read answer.
+6. limit the response in 300-400 words.
 
 Write clearly, structured, and easy to follow.
 

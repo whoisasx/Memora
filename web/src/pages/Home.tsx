@@ -1,42 +1,59 @@
+import HomeBackground from "../components/background/HomeBackground";
+import Footer from "../components/home/Footer";
+import HeroSection from "../components/home/HeroSection";
+import Navbar from "../components/home/Navbar";
 import { useThemeStore } from "../store/themeStore";
-import { useNavigate } from "react-router";
+import { motion } from "motion/react";
+import Icon from "../ui/Icon";
+import { HiSun, HiMoon } from "react-icons/hi";
 
 export default function Home() {
 	const { theme, setTheme } = useThemeStore();
-	const navigate = useNavigate();
 
 	return (
-		<div className="min-h-screen min-w-screen bg-slate-4 dark:bg-slate-dark-4">
-			<div>
-				<button
+		<div className="min-h-screen min-w-screen relative text-black dark:text-white">
+			<HomeBackground />
+			<Navbar />
+			<HeroSection />
+			<div id="contact"></div>
+			<Footer />
+			{/* Theme Toggle - Fixed in top right corner */}
+			<motion.div
+				className="fixed top-11 right-4 z-[999]"
+				initial={{ opacity: 0, scale: 0.8 }}
+				animate={{ opacity: 1, scale: 1 }}
+				transition={{ duration: 0.5, delay: 0.5 }}
+			>
+				<motion.button
 					onClick={() =>
 						setTheme(theme === "light" ? "dark" : "light")
 					}
-					className="h-10 px-5 rounded-2xl border m-5 bg-ruby-1 dark:bg-ruby-dark-3 text-slate-dark-1 dark:text-slate-1"
+					className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+					whileHover={{ scale: 1.1 }}
+					whileTap={{ scale: 0.95 }}
+					transition={{ type: "spring", stiffness: 400, damping: 17 }}
 				>
-					change to {theme === "dark" ? "light" : "dark"}
-				</button>
-			</div>
-			<div className="mx-5 px-10 w-auto border rounded-xl">
-				<button
-					onClick={() => navigate("/signin")}
-					className="h-10 px-5 rounded-2xl border m-5"
-				>
-					signin
-				</button>
-				<button
-					onClick={() => navigate("/signup")}
-					className="h-10 px-5 rounded-2xl border m-5"
-				>
-					signup
-				</button>
-				<button
-					onClick={() => navigate("/dashboard")}
-					className="h-10 px-5 rounded-2xl border m-5"
-				>
-					dashboard
-				</button>
-			</div>
+					<motion.div
+						animate={{
+							rotate: theme === "light" ? 0 : 180,
+						}}
+						transition={{
+							duration: 0.5,
+							ease: [0.4, 0, 0.2, 1],
+						}}
+					>
+						{theme === "light" ? (
+							<Icon className="text-orange-500 group-hover:text-orange-600 transition-colors duration-200">
+								<HiSun />
+							</Icon>
+						) : (
+							<Icon className="text-blue-400 group-hover:text-blue-500 transition-colors duration-200">
+								<HiMoon />
+							</Icon>
+						)}
+					</motion.div>
+				</motion.button>
+			</motion.div>
 		</div>
 	);
 }

@@ -31,6 +31,14 @@ export default function Graphview() {
 	const svgRef = useRef<null | SVGSVGElement>(null);
 	const graphRef = useRef<Graph | null>(null);
 
+	useEffect(() => {
+		document.title = "Graphview | Memora - Your Second Brain";
+		return () => {
+			document.title =
+				"Memora | your second brain: tag, connect, visualize, and chat with your knowledge.";
+		};
+	}, []);
+
 	// Debounced resize handler using custom hook
 	const [debouncedResize] = useDebouncedCallback(() => {
 		const newWidth = window.innerWidth;
