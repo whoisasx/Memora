@@ -396,20 +396,22 @@ def search_content(search_content:Annotated[SearchContent,Body()]):
                 "hits": final_hits
             }
         except Exception as e:
-            print('es search error:', e)
+            print('opensearch search error:', e)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="search error")
     else:
         try:
             input_embedding = url_utils.get_text_embeddings(search_content.input)
             query = {
                 "size": 2,
-                "knn": {
-                    "field": "embeddings.vector",  
-                    "query_vector": input_embedding, 
-                    "k": 3,
-                    "num_candidates": 10
+                "query": {
+                    "knn": {
+                        "embeddings.vector": {
+                            "vector": input_embedding,
+                            "k": 3
+                        }
+                    }
                 },
-                "min_score": 0.8 
+                "min_score": 0.8
             }
             response = es_client.search(index=f"{index_name if index_name else 'memora'}", body=query)
             hits = response.get('hits', {}).get('hits', [])
@@ -471,5 +473,5 @@ Answer:
             
             return StreamingResponse(event_stream(), media_type="text/event-stream")
         except Exception as e:
-            print('es search error:', e)
+            print('opensearch search error:', e)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="search error")
