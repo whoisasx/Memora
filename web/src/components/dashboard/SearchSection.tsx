@@ -52,7 +52,7 @@ export default function SearchSection() {
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
 			const response = await axios.post(
-				`${backendUrl}/contents/search`,
+				`${backendUrl}/api/contents/search`,
 				{
 					input: q,
 					isVector: false,
@@ -93,7 +93,6 @@ export default function SearchSection() {
 		setIsSearching(true);
 		if (!aiMode) {
 			const ids = await findTopN(query);
-			console.log("ids:", ids);
 			setNormalResults(ids ?? []);
 			setAiResults([]);
 			setAiAnswer([]);
@@ -114,7 +113,7 @@ export default function SearchSection() {
 
 			try {
 				const backendUrl = import.meta.env.VITE_BACKEND_URL;
-				const res = await fetch(`${backendUrl}/contents/search`, {
+				const res = await fetch(`${backendUrl}/api/contents/search`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -194,7 +193,6 @@ export default function SearchSection() {
 											? h.id
 											: String(h)
 									);
-									console.log("finalhits:", finalHits);
 									setAiResults(finalHits);
 									setSearchedContents(finalHits);
 								} else if (

@@ -24,11 +24,6 @@ services:
     networks:
       - memora-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   frontend:
     image: whoisasx/memora-web:latest

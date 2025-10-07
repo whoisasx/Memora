@@ -309,7 +309,7 @@ export default function CreateContentModal() {
 			try {
 				const backendUrl = import.meta.env.VITE_BACKEND_URL;
 				const response = await axios.post(
-					`${backendUrl}/contents`,
+					`${backendUrl}/api/contents/`,
 					{
 						id: c.id,
 						url: c.url,
@@ -357,7 +357,7 @@ export default function CreateContentModal() {
 		// Example stub: return some matches based on q
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
-			const response = await axios.post(`${backendUrl}/tags/search`, {
+			const response = await axios.post(`${backendUrl}/api/tags/search`, {
 				tagname: q,
 			});
 			const responseData = response.data as ApiResponseData;

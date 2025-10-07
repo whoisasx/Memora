@@ -9,7 +9,7 @@ from app.utils import auth as auth_utils
 from ..dependency import verify_token
 
 router = APIRouter(
-    prefix="/users",
+    prefix="/api/users",
     tags=["users"],
     dependencies=[Depends(get_db)],
     responses={404: {"description": "not found"}},

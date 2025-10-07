@@ -33,7 +33,7 @@ async def extract_username(req:Request, token:Annotated[str,Depends(verify_token
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
 
 router=APIRouter(
-    prefix='/contents',
+    prefix='/api/contents',
     tags=["contents"],
     dependencies=[Depends(extract_username),Depends(get_db)],
     responses={404: {"description":"not found"}}

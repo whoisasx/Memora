@@ -32,7 +32,7 @@ export default function Signup() {
 		setIsLoading(true);
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
-			const response = await axios.post(`${backendUrl}/auth/signup`, {
+			const response = await axios.post(`${backendUrl}/api/auth/signup`, {
 				username: username,
 				email: email.length > 0 ? email : undefined,
 				password: password,
@@ -52,7 +52,6 @@ export default function Signup() {
 			} else if (response.status === 400) {
 				toast.error("User already registered. Please sign in.");
 			} else {
-				console.log("message:", responseData.message);
 				toast.error("Error while signing up. Please try again.");
 			}
 		} catch (error: any) {
@@ -73,7 +72,7 @@ export default function Signup() {
 
 	const handleGoogleSignIn = () => {
 		const backendUrl = import.meta.env.VITE_BACKEND_URL;
-		window.location.href = `${backendUrl}/auth/google/login`;
+		window.location.href = `${backendUrl}/api/auth/google/login`;
 	};
 
 	return (

@@ -43,7 +43,7 @@ export default function Dashboard() {
 				const backendUrl = import.meta.env.VITE_BACKEND_URL;
 				try {
 					const validateResp = await axios.get(
-						`${backendUrl}/auth/validate`,
+						`${backendUrl}/api/auth/validate`,
 						{
 							headers: { Authorization: `Bearer ${accessToken}` },
 						}
@@ -69,7 +69,7 @@ export default function Dashboard() {
 				}
 
 				const response = await axios.get(
-					`${backendUrl}/contents?username=${user.username}`,
+					`/api/contents/?username=${user.username}`,
 					{
 						headers: {
 							Authorization: `Bearer ${accessToken}`,

@@ -103,7 +103,7 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
 			const response = await axios.post(
-				`${backendUrl}/contents/connect-to/${content.id}`,
+				`${backendUrl}/api/contents/connect-to/${content.id}`,
 				childId.trim(),
 				{
 					headers: {
@@ -163,7 +163,7 @@ export default function ContentCard({ content, view }: ContentCardProps) {
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
 			const response = await axios.delete(
-				`${backendUrl}/contents/${content.id}`,
+				`${backendUrl}/api/contents/${content.id}`,
 				{
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem(

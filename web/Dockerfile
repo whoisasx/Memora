@@ -1,23 +1,22 @@
-# Frontend Dockerfile for React/Vite with Bun Preview
-FROM node:22.12-alpine3.19
+# ---------- Stage 1: Build ----------
+FROM node:22.12-alpine AS builder
 
 WORKDIR /app
+# ARG VITE_BACKEND_URL=http://localhost:8000
+ARG VITE_BACKEND_URL=https://memora.asxcode.com
 
-# Accept build arguments
-ARG VITE_BACKEND_URL=http://localhost:8000
-
-# Copy package files and install dependencies
-COPY package.json bun.lock* ./
+COPY package.json ./
 RUN npm install -g bun && bun install --frozen-lockfile
-
-# Copy source and build
 COPY . .
-# Create .env file with build args
+
 RUN echo "VITE_BACKEND_URL=${VITE_BACKEND_URL}" > .env
 RUN bun run build
 
-# Expose port
-EXPOSE 4173
+# ---------- Stage 2: Serve ----------
+FROM oven/bun:1.1.30-alpine AS runner
 
-# Start preview server
-CMD ["bun", "run", "preview", "--host", "0.0.0.0"]
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 4173
+CMD ["bun", "x", "serve", "-s", "dist", "-l", "4173"]

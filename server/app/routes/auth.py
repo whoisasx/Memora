@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 router=APIRouter(
-    prefix='/auth',
+    prefix='/api/auth',
     tags=['auth'],
     dependencies=[Depends(get_db)],
     responses={404: {"description":"not-found"}}

@@ -69,7 +69,7 @@ export default function Graphview() {
 
 				const backendUrl = import.meta.env.VITE_BACKEND_URL;
 				const validateResp = await axios.get(
-					`${backendUrl}/auth/validate`,
+					`${backendUrl}/api/auth/validate`,
 					{
 						headers: { Authorization: `Bearer ${accessToken}` },
 					}
@@ -103,7 +103,7 @@ export default function Graphview() {
 			try {
 				const backendUrl = import.meta.env.VITE_BACKEND_URL;
 				const response = await axios.get(
-					`${backendUrl}/contents?username=${user.username}`,
+					`${backendUrl}/api/contents/?username=${user.username}`,
 					{
 						headers: { Authorization: `Bearer ${accessToken}` },
 					}

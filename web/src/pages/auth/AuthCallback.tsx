@@ -23,7 +23,6 @@ export default function Callback() {
 		const processCallback = async () => {
 			try {
 				const params = new URLSearchParams(window.location.search);
-				console.log("OAuth callback params:", params);
 
 				const token = params.get("token");
 				const username = params.get("username");
@@ -39,7 +38,7 @@ export default function Callback() {
 					setState("error");
 					setMessage("Authentication failed");
 					setErrorDetails(error);
-					setTimeout(() => navigate("/signin"), 3000);
+					setTimeout(() => navigate("/signin"), 1000);
 					return;
 				}
 
@@ -65,14 +64,14 @@ export default function Callback() {
 					setState("error");
 					setMessage("Authentication incomplete");
 					setErrorDetails("Missing required parameters");
-					setTimeout(() => navigate("/signin"), 3000);
+					setTimeout(() => navigate("/signin"), 1000);
 				}
 			} catch (err) {
 				console.error("Callback processing error:", err);
 				setState("error");
 				setMessage("Something went wrong");
 				setErrorDetails("Please try signing in again");
-				setTimeout(() => navigate("/signin"), 3000);
+				setTimeout(() => navigate("/signin"), 1500);
 			}
 		};
 

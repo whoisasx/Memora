@@ -28,4 +28,6 @@ USER appuser
 
 # Expose port and run
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Enable proxy headers so the app reads X-Forwarded-Proto/X-Forwarded-For from nginx
+# This prevents the backend from generating absolute redirects to http:// when TLS is terminated at nginx
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "127.0.0.1"]

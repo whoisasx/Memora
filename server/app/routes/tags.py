@@ -7,7 +7,7 @@ from app.models.models import Tag
 from pydantic import BaseModel
 
 router=APIRouter(
-    prefix='/tags',
+    prefix='/api/tags',
     tags=['tags'],
     dependencies=[Depends(get_db)],
     responses={404:{"description":"not-found"}}

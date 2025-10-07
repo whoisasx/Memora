@@ -49,7 +49,7 @@ export default function Signin() {
 		setIsLoading(true);
 		try {
 			const backendUrl = import.meta.env.VITE_BACKEND_URL;
-			const response = await axios.post(`${backendUrl}/auth/signin`, {
+			const response = await axios.post(`${backendUrl}/api/auth/signin`, {
 				username: username,
 				email: email,
 				password: password,
@@ -66,7 +66,6 @@ export default function Signin() {
 				toast.success("Welcome back!");
 				navigate("/dashboard");
 			} else {
-				console.log("message:", responseData.message);
 				toast.error("Error while signing in. Please try again.");
 			}
 		} catch (error) {
@@ -82,7 +81,7 @@ export default function Signin() {
 
 	const handleGoogleSignIn = () => {
 		const backendUrl = import.meta.env.VITE_BACKEND_URL;
-		window.location.href = `${backendUrl}/auth/google/login`;
+		window.location.href = `${backendUrl}/api/auth/google/login`;
 	};
 
 	return (
