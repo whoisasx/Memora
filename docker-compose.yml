@@ -1,0 +1,44 @@
+services:
+  backend:
+    image: whoisasx/memora-server:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - OPENSEARCH_INDEX_NAME=${OPENSEARCH_INDEX_NAME}
+      - EMBEDDING_DIMS=${EMBEDDING_DIMS}
+      - OPENSEARCH_USER=${OPENSEARCH_USER}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+      - DB_ECHO=${DB_ECHO}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - DOMAIN_NAME=${DOMAIN_NAME}
+    volumes:
+      - ./server:/app
+      - /app/__pycache__
+    networks:
+      - memora-network
+    restart: unless-stopped
+
+  frontend:
+    image: whoisasx/memora-web:latest
+    ports:
+      - "4173:4173"
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+    depends_on:
+      - backend
+    networks:
+      - memora-network
+    restart: unless-stopped
+
+networks:
+  memora-network:
+    driver: bridge

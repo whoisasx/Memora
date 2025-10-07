@@ -4,41 +4,37 @@ import os
 load_dotenv()
 
 # OpenSearch configuration
-opensearch_url = os.environ.get("OPENSEARCH_URL") or "http://localhost:9200"
+opensearch_url = os.environ.get("OPENSEARCH_URL")
 index_name = os.environ.get("OPENSEARCH_INDEX_NAME") or "memora"
 dims = os.environ.get("EMBEDDING_DIMS")
 
-if dims is None:
-    raise Exception("EMBEDDING_DIMS is not set. Set EMBEDDING_DIMS in your environment (e.g. 768)")
+if dims is None or opensearch_url is None:
+    raise Exception("EMBEDDING_DIMS or OPENSEARCH_URL is not set. Set EMBEDDING_DIMS or OPENSEARCH_URL in your environment.")
 
 try:
     dims = int(dims)
 except ValueError:
     raise Exception(f"cannot convert EMBEDDING_DIMS='{dims}' into integer")
 
-# Optional basic auth (useful for secured OpenSearch)
+# Required auth for AWS OpenSearch
 opensearch_user = os.environ.get("OPENSEARCH_USER")
 opensearch_pass = os.environ.get("OPENSEARCH_PASSWORD")
+
+if not opensearch_user or not opensearch_pass:
+    raise Exception("OPENSEARCH_USER and OPENSEARCH_PASSWORD are required for AWS OpenSearch fine-grained access control")
 
 try:
     from opensearchpy import OpenSearch
 except Exception as e:
     raise Exception("opensearch-py is required. Install with: pip install opensearch-py") from e
 
-# build client - handle None URL case
-if not opensearch_url:
-    raise Exception("OPENSEARCH_URL must be set")
-
-# Create OpenSearch client with optional auth
-if opensearch_user and opensearch_pass:
-    _opensearch_client = OpenSearch(
-        hosts=[opensearch_url],
-        http_auth=(opensearch_user, opensearch_pass),
-        use_ssl=opensearch_url.startswith("https://"),
-        verify_certs=False,
-    )
-else:
-    _opensearch_client = OpenSearch(hosts=[opensearch_url])
+# Create OpenSearch client for AWS with fine-grained access control
+_opensearch_client = OpenSearch(
+    hosts=[opensearch_url],
+    http_auth=(opensearch_user, opensearch_pass),
+    use_ssl=True,
+    verify_certs=True,
+)
 
 
 # Adapter class to make OpenSearch API compatible with contents.py calls

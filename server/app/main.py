@@ -14,10 +14,20 @@ from .routes import users,auth,contents,tags
 async def lifespan(app: FastAPI):
 	# startup tasks
 	try:
+		print("Creating OpenSearch index...")
 		create_index()
+		print("OpenSearch index created successfully")
+	except Exception as e:
+		print(f"Failed to create OpenSearch index: {e}")
+		# Don't pass silently - this is important for debugging
+	
+	try:
+		print("Ensuring database exists...")
 		ensure_database_exists()
-	except Exception:
-		pass
+		print("Database setup completed")
+	except Exception as e:
+		print(f"Failed to ensure database exists: {e}")
+	
 	yield
 	# shutdown tasks (none)
 

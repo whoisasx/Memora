@@ -1,0 +1,77 @@
+services:
+  backend:
+    image: whoisasx/memora-server:latest
+    container_name: memora-backend
+    environment:
+      - OPENSEARCH_URL=${OPENSEARCH_URL}
+      - OPENSEARCH_INDEX_NAME=${OPENSEARCH_INDEX_NAME}
+      - EMBEDDING_DIMS=${EMBEDDING_DIMS}
+      - OPENSEARCH_USER=${OPENSEARCH_USER}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_ECHO=${DB_ECHO}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - PYTHONPATH=/app
+    expose:
+      - "8000" # nginx ko serve karega
+    networks:
+      - memora-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: whoisasx/memora-web:latest
+    container_name: memora-frontend
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+    expose:
+      - "4173" # nginx ko serve karega
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - memora-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4173/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: memora-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - memora-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  memora-network:
+    driver: bridge
